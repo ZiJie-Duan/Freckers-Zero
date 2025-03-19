@@ -200,28 +200,40 @@ impl Freckers {
         }
     } 
 
-    fn play(&mut self, p:i8,r:i8,c:i8,d:i8,g:bool) -> PyResult<[[i8;8];8]>{
+    fn help(&self){
+        println!("欢迎使用 freckers 游戏的强化学习 gym！\n");
+        println!("本程序包含以下函数：\n");
+        println!("1. step 函数：用于模拟游戏。\n");
+        println!("   参数说明：\n");
+        println!("   - player: 玩家，值为 1 表示红色青蛙，值为 2 表示蓝色青蛙。\n");
+        println!("   - row: 行坐标，二维数组中的整数。\n");
+        println!("   - col: 列坐标，二维数组中的整数。\n");
+        println!("   - dir: 青蛙跳动的方向，整数表示。\n");
+        println!("   - grow: 布尔值，表示是否跳过动作并成长荷叶。\n");
+    }
+
+    fn step(&mut self, player:i8, row:i8, col:i8, dir:i8, grow:bool) -> PyResult<()>{
         let start_time = std::time::Instant::now();
 
-        let player = match p {
+        let player = match player {
             1 => Player::Red,
             2 => Player::Blue,
-            _ => {return Err(PyValueError::new_err("p not in range"));}
+            _ => {return Err(PyValueError::new_err("player not in range"));}
         };
 
-        let row = if r >= 0 && r < 8 {
-            r
+        let row = if row >= 0 && row < 8 {
+            row
         } else {
-            return Err(PyValueError::new_err("r not in range"));
+            return Err(PyValueError::new_err("row not in range"));
         };
 
-        let col = if c >= 0 && c < 8 {
-            c
+        let col = if col >= 0 && col < 8 {
+            col
         } else {
-            return Err(PyValueError::new_err("c not in range"));
+            return Err(PyValueError::new_err("col not in range"));
         };
 
-        let dir = match d {
+        let dir = match dir {
             0 => Direction::Up,
             1 => Direction::Down,
             2 => Direction::Left,
@@ -230,35 +242,19 @@ impl Freckers {
             5 => Direction::UpRight,
             6 => Direction::DownLeft,
             7 => Direction::DownRight,
-            _ => {return Err(PyValueError::new_err("d not in range"));}
+            _ => {return Err(PyValueError::new_err("dir not in range"));}
         };
         let a = Action{
             row: row,
             col: col,
             dir: dir,
-            grow: g,
+            grow: grow,
         };
         let (s, a, sn, r, end, v) = self.game.step(player, a);
 
         let duration = start_time.elapsed();
         println!("代码执行时间: {:?}", duration);
-
-        let sn_matrix: [[i8; 8]; 8] = {
-            let mut matrix = [[0i8; 8]; 8];
-            for i in 0..8 {
-                for j in 0..8 {
-                    matrix[i][j] = match sn[i][j] {
-                        CellType::Empty => 0,
-                        CellType::RedFrog => 1,
-                        CellType::BlueFrog => 2,
-                        CellType::LotusLeaf => 3,
-                        // Add more mappings if there are additional CellType variants
-                    };
-                }
-            }
-            matrix
-        };
-        return Ok(sn_matrix);
+        return Ok(());
     }
 }
 
