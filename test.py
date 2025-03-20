@@ -1,14 +1,22 @@
-from freckers_gym import Freckers
+from freckers_gym import Game, Player, Action
 import time
 
+g = Game()
 
+g = Game()
 start_time = time.time()
-f = Freckers()
-f.help()
-f.step(1,1,1,1,False)
-f.step(1,2,1,1,False)
-f.step(1,1,3,1,False)
-f.step(1,1,1,1,False)
-f.step(1,1,1,2,False)
-end_time = time.time()
-print(f"执行时间: {end_time - start_time} 秒")
+pr = Player.Red
+pb = Player.Blue
+g.pprint()
+
+_,_,_,_,_,v = g.step(pr, Action(0,2,4))
+g.pprint()
+_,_,_,_,_,v = g.step(pr, Action(True))
+g.pprint()
+
+_,_,_,_,_,v = g.step(pb, Action(7,6,0))
+_,_,_,_,_,v = g.step(pb, Action(7,3,0))
+_,_,_,_,_,v = g.step(pb, Action(grow=True))
+g.pprint()
+
+print(f"执行时间: {time.time() - start_time} 秒")

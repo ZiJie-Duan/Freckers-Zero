@@ -225,7 +225,7 @@ impl Game {
             self.grow(player);
             valid = true;
         } 
-        
+
         r = match self.check_win(){
             Some(p) => {
                 end = true;
@@ -238,9 +238,7 @@ impl Game {
             None => 0 as f32,
         };
         return (s, action, sn, r, end, valid);
-    }
-
-    
+    } 
     
     fn help(&self){
         println!("欢迎使用 freckers 游戏的强化学习 gym！\n");
