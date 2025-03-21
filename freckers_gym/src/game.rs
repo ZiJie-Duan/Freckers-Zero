@@ -88,6 +88,7 @@ impl Action {
 pub struct Game {
     gameBoard: [[CellType; 8]; 8],
     round: Player,
+    round_counter: i64,
 }
 
 impl Game { 
@@ -197,6 +198,27 @@ impl Game {
         game_board[7][7] = CellType::LotusLeaf;
         game_board
     }
+
+    fn eval(&self, player: Player) -> f64 {
+        let mut total_distance = 0;
+        let max_distance = 35.0;
+
+        for row in 0..8 {
+            for col in 0..8 {
+                if self.gameBoard[row][col] == player.into() {
+                    let distance = match player {
+                        Player::Blue => row,
+                        Player::Red => 7 - row,
+                    };
+                    total_distance += distance;
+                }
+            }
+        }
+
+        let normalized_distance = total_distance as f64 / max_distance;
+        1.0 - normalized_distance
+    }
+
 }
 
 impl Game {
@@ -205,6 +227,7 @@ impl Game {
         Game {
             gameBoard: Self::init_game_board(),
             round: Player::Red,
+            round_counter: 0,
         }
     }
 
@@ -299,6 +322,14 @@ impl Game {
             }   ,
             None => 0 as f32,
         };
+
+        if self.round_counter >= 30{
+            r = self.eval(player) as f32;
+            end = true;
+        }
+
+        self.round_counter += 1;
+
         return (s, sn, r, end, valid);
     }
     pub fn unsafe_grow(&mut self, player:Player)
@@ -320,6 +351,13 @@ impl Game {
             }   ,
             None => 0 as f32,
         };
+
+        if self.round_counter >= 30{
+            r = self.eval(player) as f32;
+            end = true;
+        }
+
+        self.round_counter += 1;
         return (s, sn, r, end, valid);
     }
 
@@ -331,6 +369,7 @@ impl Clone for Game {
         Game {
             gameBoard: self.gameBoard.clone(),
             round: self.round.clone(),
+            round_counter: self.round_counter,
         }
     }
 }
