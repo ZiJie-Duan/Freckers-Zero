@@ -54,9 +54,12 @@ impl MctsAcc {
         }
     }
 
-    fn build_tensor(gameboard: [[CellType;8];8], player: Player) -> [[[i32;8];8];8]{
+    fn build_tensor(gameboard: [[CellType;8];8], player: Player) -> ([[[i32;8];8];8], [(i8,i8);6]){
         let mut tensor = [[[0;8];8];8];
+        let mut fg_loc_list = [(0,0);6];
         let mut fg_loc: Vec<(usize,usize)> = Vec::new();
+        let mut count = 0;
+
         for row in 0..8{
             for col in 0..8{
                 let cell = gameboard[row][col];
@@ -64,6 +67,8 @@ impl MctsAcc {
                     tensor[0][row][col] = 1;
                 } else if cell == player.into(){
                     fg_loc.push((row,col));
+                    fg_loc_list[count] = (row as i8,col as i8);
+                    count += 1;
                 } else if cell != CellType::Empty{
                     tensor[1][row][col] = 1;
                 }
@@ -79,7 +84,7 @@ impl MctsAcc {
             counter += 1;
         }
 
-        return  tensor;
+        return  (tensor, fg_loc_list);
 
     }
 
@@ -123,13 +128,30 @@ impl MctsAcc {
             true => self.game.unsafe_grow(player),
             false => self.game.unsafe_move(player, r, c, nr, nc)
         };
+        self.game.pprint();
 
         return (
-            MctsAcc::build_tensor(s, player),
-            MctsAcc::build_tensor(s, player),
+            MctsAcc::build_tensor(s, player).0,
+            MctsAcc::build_tensor(sn, player).0,
             r,
             end,
             valid
         )
+    }
+
+    fn get_game_tensor(&self, player: Player) -> ([[[i32;8];8];8], [(i8,i8);6]){
+        MctsAcc::build_tensor(self.game.get_game_board().clone(), player)
+    }
+
+    fn dclone(& self) -> Self{
+        return MctsAcc { 
+            game: self.game.clone(), 
+            dirs: self.dirs.clone(), 
+            blue_dirs: self.blue_dirs.clone(), 
+            red_dirs: self.red_dirs.clone(),}
+    }
+
+    fn pprint(& self){
+        self.game.pprint();
     }
 }
