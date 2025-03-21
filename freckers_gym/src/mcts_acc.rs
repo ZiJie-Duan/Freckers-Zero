@@ -2,6 +2,7 @@ use std::cell::Cell;
 
 use pyo3::{ffi::printfunc, prelude::*};
 use crate::game::{Game, Action, Direction, Player, CellType};
+use rand::seq::SliceRandom;
 
 #[pyclass]
 pub struct MctsAcc{
@@ -54,9 +55,31 @@ impl MctsAcc {
     }
 
     fn build_tensor(gameboard: [[CellType;8];8], player: Player) -> [[[i32;8];8];8]{
-        let tensor = [[[0;8];8];8];
+        let mut tensor = [[[0;8];8];8];
+        let mut fg_loc: Vec<(usize,usize)> = Vec::new();
+        for row in 0..8{
+            for col in 0..8{
+                let cell = gameboard[row][col];
+                if cell == CellType::LotusLeaf{
+                    tensor[row][col][0] = 1;
+                } else if cell == player.into(){
+                    fg_loc.push((row,col));
+                } else if cell != CellType::Empty{
+                    tensor[row][col][1] = 1;
+                }
+            }
+        }
 
+        let mut rng = rand::thread_rng();
+        fg_loc.shuffle(&mut rng);
 
+        let mut counter = 2;
+        for (r,c) in fg_loc{
+            tensor[r][c][counter] = 1;
+            counter += 1;
+        }
+
+        return  tensor;
 
     }
 
@@ -93,7 +116,7 @@ impl MctsAcc {
     }
 
     fn step(&mut self, player: Player, r:i8, c:i8, nr:i8, nc:i8, grow:bool)
-    -> ([[CellType; 8]; 8], [[CellType; 8]; 8], f32, bool, bool){
+    -> ([[[i32;8];8];8], [[[i32;8];8];8], f32, bool, bool){
         
         let (s, sn, r, end, valid) 
         = match grow {
@@ -101,8 +124,12 @@ impl MctsAcc {
             false => self.game.unsafe_move(player, r, c, nr, nc)
         };
 
-        
-
-
+        return (
+            MctsAcc::build_tensor(s, player),
+            MctsAcc::build_tensor(s, player),
+            r,
+            end,
+            valid
+        )
     }
 }
