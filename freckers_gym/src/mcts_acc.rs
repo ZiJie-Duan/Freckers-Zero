@@ -61,11 +61,11 @@ impl MctsAcc {
             for col in 0..8{
                 let cell = gameboard[row][col];
                 if cell == CellType::LotusLeaf{
-                    tensor[row][col][0] = 1;
+                    tensor[0][row][col] = 1;
                 } else if cell == player.into(){
                     fg_loc.push((row,col));
                 } else if cell != CellType::Empty{
-                    tensor[row][col][1] = 1;
+                    tensor[1][row][col] = 1;
                 }
             }
         }
@@ -75,7 +75,7 @@ impl MctsAcc {
 
         let mut counter = 2;
         for (r,c) in fg_loc{
-            tensor[r][c][counter] = 1;
+            tensor[counter][r][c] = 1;
             counter += 1;
         }
 
