@@ -19,6 +19,7 @@ impl From<Player> for CellType {
     }
 }
 
+#[pyclass]
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum Player {
     Red,
@@ -38,16 +39,16 @@ pub enum Direction {
 }
 
 impl Direction {
-    pub fn goFromLoc(&self, row:i8, loc: i8) -> (i8, i8) {
+    pub fn goFromLoc(&self, row:i8, col: i8) -> (i8, i8) {
         match self {
-            Direction::Up => (row - 1, loc),
-            Direction::Down => (row + 1, loc),
-            Direction::Left => (row, loc - 1),
-            Direction::Right => (row, loc + 1),
-            Direction::UpLeft => (row - 1, loc - 1),
-            Direction::UpRight => (row - 1, loc + 1),
-            Direction::DownLeft => (row + 1, loc - 1),
-            Direction::DownRight => (row + 1, loc + 1),
+            Direction::Up => (row - 1, col),
+            Direction::Down => (row + 1, col),
+            Direction::Left => (row, col - 1),
+            Direction::Right => (row, col + 1),
+            Direction::UpLeft => (row - 1, col - 1),
+            Direction::UpRight => (row - 1, col + 1),
+            Direction::DownLeft => (row + 1, col - 1),
+            Direction::DownRight => (row + 1, col + 1),
         }
     }
 
@@ -274,9 +275,54 @@ impl Game {
         self.round = Player::Red;
     }
 
-    pub fn get_game_board(&self) -> [[CellType; 8]; 8]{
-        self.gameBoard
+    pub fn get_game_board(&self) -> &[[CellType; 8]; 8]{
+       &self.gameBoard
     }
+
+    pub fn unsafe_move(&mut self, player:Player, r: i8, c: i8, nr:i8, nc:i8)
+    -> ([[CellType; 8]; 8], [[CellType; 8]; 8], f32, bool, bool){
+        let mut s: [[CellType; 8]; 8] = self.gameBoard.clone();
+        self.gameBoard[nr as usize][nc as usize] = player.into();
+        self.gameBoard[r as usize][c as usize] = CellType::Empty;
+        let mut sn: [[CellType; 8]; 8] = self.gameBoard.clone();
+        let mut valid = true;
+        let mut r: f32;
+        let mut end = false; 
+        r = match self.check_win(){
+            Some(p) => {
+                end = true;
+                if p == player{
+                    1 as f32
+                } else {
+                    -1 as f32
+                }
+            }   ,
+            None => 0 as f32,
+        };
+        return (s, sn, r, end, valid);
+    }
+    pub fn unsafe_grow(&mut self, player:Player)
+        -> ([[CellType; 8]; 8], [[CellType; 8]; 8], f32, bool, bool){
+        let mut s: [[CellType; 8]; 8] = self.gameBoard.clone();
+        self.grow(player);
+        let mut sn: [[CellType; 8]; 8] = self.gameBoard.clone();
+        let mut valid = true;
+        let mut r: f32;
+        let mut end = false; 
+        r = match self.check_win(){
+            Some(p) => {
+                end = true;
+                if p == player{
+                    1 as f32
+                } else {
+                    -1 as f32
+                }
+            }   ,
+            None => 0 as f32,
+        };
+        return (s, sn, r, end, valid);
+    }
+
 }
 
 
