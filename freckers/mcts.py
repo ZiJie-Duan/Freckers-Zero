@@ -1,21 +1,68 @@
+from math import sqrt
+from freckers_gym import RSTK
 
+class MctsConfig:
+    def __init__(self) -> None:
+        self.c = 2
+        self.t = 1
+        self.finish = False
+        self.visulze = False
 
 class MCTS:
-    def __init__(self, p, game=None, player=0) -> None:
+    def __init__(self, p, action, config, game=None, player=0) -> None:
         self.game = game
-        self.player = player
+        self.player = player # 0/1
+        self.config = config
+        self.action = action # (r,c,nr,nc)
         self.n = 0 # add 1 when backp
         self.w = 0 # add v when backp
         self.q = 0 # 1 / self.n * backp v_acc 
         self.p = p # from parent nn
 
         self.children = [] #(child, (r,c,nr,nc)/(true,0,0,0)) 
-        self.c = 2
-        self.t = 1
+        self.meta_value = 0
 
-        self.meta_v = 0
+    def select(self):
+        max = -999
+        max_child = None
 
-        self.finished = False
+        # U(s,a) = C_puct * P(s,a) * Sqrt(Sum(N(s,b)_b_for_all_children)) / (1 + N(s,a)) 
+        # all_num = Sqrt(Sum(N(s,b)_b_for_all_children))
+        all_num = sqrt(sum([c.n for c in self.children]))
+        for child in self.children:
+
+            # puct = Q(s,a) + U(s,a)
+            u = self.config.c * child.p * (all_num) / (1 + child.n)
+            puct = child.q + u
+            if max < puct:
+                max = puct
+                max_child = child
+        
+        return max_child
+    
+
+    
+
+    def simu(self, game):
+
+        if self.n == 0:
+            # eval and expand 
+            pass
+        else:
+            # selection
+            child = self.select()
+            # move
+            s,r,sn,end = game.step(*self.action)
+            # go deeper
+            value = child.simu(game)
+            # backp
+            self.n += 1
+            self.w += value
+            self.q = (value + self.meta_value) / self.n
+            return value
+        
+
+
 
     def run(self, step = 100):
         for i in range(step):
