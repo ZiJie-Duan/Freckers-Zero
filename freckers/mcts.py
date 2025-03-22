@@ -1,5 +1,13 @@
 from math import sqrt
 from freckers_gym import RSTK
+from deep_frecker import DeepFrecker
+from deep_frecker import DataRecord
+import numpy as np
+import copy
+from game import Game
+
+deep_frecker = DeepFrecker()
+data_record = DataRecord(file=r"C:\Users\lucyc\Desktop\freckers_zero\data.h5")
 
 class MctsConfig:
     def __init__(self) -> None:
@@ -9,17 +17,17 @@ class MctsConfig:
         self.visulze = False
 
 class MCTS:
-    def __init__(self, p, action, config, game=None, player=0) -> None:
+    def __init__(self, prob, action, config, game=None, player=0) -> None:
         self.game = game
         self.player = player # 0/1
         self.config = config
-        self.action = action # (r,c,nr,nc)
+        self.action = action # (r,c,nr,nc,grow)
         self.n = 0 # add 1 when backp
         self.w = 0 # add v when backp
         self.q = 0 # 1 / self.n * backp v_acc 
-        self.p = p # from parent nn
+        self.p = prob # from parent nn
 
-        self.children = [] #(child, (r,c,nr,nc)/(true,0,0,0)) 
+        self.children = [] 
         self.meta_value = 0
 
     def select(self):
@@ -39,215 +47,134 @@ class MCTS:
                 max_child = child
         
         return max_child
-    
 
-    
+
+    def expand(self, action_prob, rstk):
+
+        for actions in rstk.get_action_space(self.player):
+
+            base_loc = actions[0] # the location of the chess
+            for action in actions[1:]: # loop to get the location where the chess will be placed
+
+                self.children.append(
+                    MCTS(
+                        prob = action_prob[DeepFrecker.loc_trans(action[0], action[1])][base_loc[0]][base_loc[1]],
+                        action = (base_loc[0], base_loc[1], action[0], action[1], False),
+                        config = self.config,
+                        player = 0 if self.player == 1 else 1
+                        )
+                )
+
+        self.children.append(
+            MCTS(
+                prob = action_prob[5][5][5], # fix the location of grow probability
+                action = (0, 0, 0, 0, True), # grow
+                config = self.config,
+                player = 0 if self.player == 1 else 1
+                )
+        )
+            
 
     def simu(self, game):
 
         if self.n == 0:
-            # eval and expand 
-            pass
+            # eval
+            gameboard = game.get_gameboard()
+            action_prob, value = deep_frecker.run(gameboard, self.player)
+            rstk = RSTK(gameboard)
+            # expand
+            self.expand(action_prob, rstk)
+            # backp
+            self.meta_value = value[0] # value has two value, first is win, second is lose
+            self.n += 1
+            self.w += value[0]
+            self.q = value[0] / self.n
+            return value[0],0 # return estimated value and, but no reward
+
         else:
             # selection
             child = self.select()
             # move
-            s,r,sn,end = game.step(*self.action)
-            # go deeper
-            value = child.simu(game)
-            # backp
-            self.n += 1
-            self.w += value
-            self.q = (value + self.meta_value) / self.n
-            return value
-        
-
-
-
-    def run(self, step = 100):
-        for i in range(step):
-            if i > (step - 0):
-                self.simu(self.game.dclone(), self.player, visual = True)
-            else:
-                self.simu(self.game.dclone(), self.player, visual = False)
-
-    def rotate_180(self, row, col):
-        new_row = 7 - row
-        new_col = 7 - col
-        return (new_row, new_col)
-
-    def go(self):
-        children_pubt = []
-        max = -999
-        max_i = 0
-        tt = sum([c[0].n**(1/self.t) for c in self.children])
-        for i, child_With_action in enumerate(self.children):
-            c = child_With_action[0]
-            v = (c.n)**(1/self.t) / tt
-            children_pubt.append(v)
-            if max < v:
-                max = v
-                max_i = i
-
-        st, fogs_info = self.game.get_game_tensor(self.player)
-        if self.player == Player.Blue:
-            st = np.rot90(st, 2)
-            fogs_info = [(self.rotate_180(loc[0], loc[1]), surface) for loc, surface in fogs_info]
-
-        surface_map = {}
-        for loc, surface in fogs_info:
-            surface_map[loc] = surface
-        pi = [] # (surface, row, col, v) / (True, v)
-        for i, data in enumerate(self.children):
-            c, a = data
-            if a[0] == True:
-                pi.append((True, children_pubt[i]))
-            else:
-                if self.player == Player.Blue:
-                    pi.append((surface_map[self.rotate_180(a[0], a[1])], a[2], a[3], children_pubt[i]))
-                else:
-                    pi.append((surface_map[(a[0], a[1])], a[2], a[3], children_pubt[i]))
-        
-        memory.append((st, pi, self.children[max_i][0].w / self.children[max_i][0].n))
-
-        r,c,rn,cn = self.children[max_i][1]
-        if r == True:
-            s,sn,r,end,valid = self.game.step(self.player,0,0,0,0,True)
-        else: 
-            s,sn,r,end,valid = self.game.step(self.player,r,c,rn,cn,False)
-        
-        self.game.pprint()
-        child = self.children[max_i][0]
-        self.player = Player.Red if self.player == Player.Blue else Player.Blue
-        self.n = child.n # add 1 when backp
-        self.w = child.w # add v when backp
-        self.q = child.q # 1 / self.n * backp v_acc 
-        self.p = child.p # from parent nn
-
-        self.children = child.children #(child, (r,c,nr,nc)/(true,0,0,0)) 
-        self.c = child.c
-        self.t = child.t
-
-
-
-    def simu(self, game, player, visual = False):
-        actions = {}
-        surface_map = {}
-
-        if self.n == 0:
-            for space in game.get_action_space(player):
-                actions[space[0]] = space[1:]
-
-            game_py_tensor, fogs_info = game.get_game_tensor(player)
-            #pprint.pprint(game_py_tensor)
-            for loc, surface in fogs_info:
-                surface_map[loc] = surface
-
-            if player == Player.Red:
-                game_tensor = torch.tensor(game_py_tensor)
-                result, v = inference(model, game_tensor)
-            else:
-                game_tensor = torch.tensor(game_py_tensor).flip(dims=[1, 2])
-                result, v = inference(model, game_tensor)
-                result = np.rot90(result, 2)
-            
-            v = v[0][0]
-            result = result[0]
-
-            for loc, action_group in actions.items():
-                for a in action_group:
-                    self.children.append(
-                        (MCTSFreckerZero(result[surface_map[loc]][a[0]][a[1]]),
-                        (loc[0], loc[1], a[0], a[1]))
-                    )
-
-            if TC == 1:
-                print("\n\n\n Play:", player,  result[6][5][5])
-                pprint(result)
-                input()
-
-            self.children.append(
-                (MCTSFreckerZero(result[6][5][5]),(True,0,0,0))
-            )
-            max = -999
-            min = 999
-            for c, a in self.children:
-                if c.p > max:
-                    max = c.p
-                if c.p < min:
-                    min = c.p
-
-            for c, a in self.children:
-                c.p = (c.p - min)/(max - min + 0.000001)
-
-            if visual == True:
-                game.pprint()
-            self.n += 1
-            self.q = v
-            self.meta_v = v
-            return v, v
-        
-
-        else:
-
-            u_total = 0
-            for c in self.children:
-                u_total += c[0].n
-
-            max = -999
-            max_i = 0
-            for i, child_With_action in enumerate(self.children):
-                c = child_With_action[0]
-                v = self.q + (c.c * c.p * (math.sqrt(u_total)) / (1+c.n))
-                if max < v:
-                    max = v
-                    max_i = i
-                
-                if TC == 1:
-                    print(f"PUBT: {v} CAL PUBT: q:{c.q}, c.p:{c.p} c.n:{c.n} action: {child_With_action[1]}")
-            if TC == 1:
-                print("Previous:", player)
-                input()
-            
-            #print(f"Choose: {self.children[max_i]}")
-            # backp
-            r,c,rn,cn = self.children[max_i][1]
-            if r == True:
-                s,sn,r,end,valid = game.step(player,0,0,0,0,True)
-            else: 
-                s,sn,r,end,valid = game.step(player,r,c,rn,cn,False)
+            s,r,sn,end = game.step(self.player, *child.action)
 
             if end:
-                self.finished = True
-                v = r
-                vacc = r
+                self.n += 1
+                self.w += r
+                self.q = (r + self.meta_value) / self.n
+                return r,r # if end, return the reward instead of the estimated value
             else:
-                v, vacc = self.children[max_i][0].simu(game, Player.Red if player == Player.Blue else Player.Blue, visual)
+                # go deeper
+                value,r = child.simu(game)
+                # backp
+                self.n += 1
+                self.w += value
+                self.q = (value + self.meta_value) / self.n
 
-            self.w += v
-            self.n += 1
-            self.q = vacc + self.meta_v / self.n
-            return v, vacc + self.meta_v
-        
-
-TC = 0
-for _ in range(10):
-    memory = []
-
-    for _ in range(1):
-        game = MctsAcc()
-        mcts = MCTSFreckerZero(1,game)
-
-        for i in range(150):
-            print(f"Step {i+1}")
-            mcts.run(800)
-            if mcts.finished:
-                break
-            mcts.go()
-
-    train(model, memory, 20)
-    model.eval()
-
-    TC += 1
-
+            return value,r # if not end, return the estimated value and the child's reward
     
+
+    def run_simu(self, rounds):
+        for _ in range(rounds):
+            game = copy.deepcopy(self.game)
+            self.simu(game)
+
+
+    def move(self):
+
+        # Pi(a,s) = N(s,a)**(1/t) / Sum(N(s,b)**(1/t))
+        # t_v = Sum(N(s,b)**(1/t))
+        t_v = sum([c.n**(1/self.config.t) for c in self.children])
+        pi = []
+
+        max = -999
+        max_child = 0
+        v_order_rec = [] # get the probability of each action
+
+        for i, child in enumerate(self.children):
+            v = (child.n)**(1/self.config.t) / t_v
+            v_order_rec.append(v)
+
+            # build up the strategy Pi(a,s)
+            pi.append(list(child.action))
+            if max < v:
+                max = v
+                max_child = child
+
+        # normalize the probability
+        v_order_rec = np.array(v_order_rec)
+        v_order_rec = v_order_rec / np.sum(v_order_rec)
+        for i in range(len(pi)):
+            pi[i].append(v_order_rec[i])
+            pi[i] = tuple(pi[i])
+
+        # record the data
+        data_record.add(self.game.get_gameboard(), pi, self.q, self.player)
+
+        # make the game move
+        self.game.step(self.player,max_child.action[0],
+                       max_child.action[1],max_child.action[2],
+                       max_child.action[3],max_child.action[4])
+        
+        # update the node
+        self.game.pprint()
+        self.player = max_child.player
+        self.n = max_child.n # add 1 when backp
+        self.w = max_child.w # add v when backp
+        self.q = max_child.q # 1 / self.n * backp v_acc 
+        self.p = max_child.p # from parent nn
+        self.action = max_child.action
+        self.children = max_child.children 
+        self.meta_value = max_child.meta_value
+
+
+def main():
+    game = Game()
+    mcts = MCTS(prob=1, action=(0,0,0,0,False), game=game, config=MctsConfig(), player=0)
+    for _ in range(100):
+        mcts.run_simu(150)
+        mcts.move()
+
+if __name__ == "__main__":
+    main()
+
+

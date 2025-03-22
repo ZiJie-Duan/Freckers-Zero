@@ -71,12 +71,26 @@ class Game:
             self.gamebaord.copy(),
             done
         )
-    
 
+    def get_gameboard(self):
+        return self.gamebaord
 
-
-g = Game()
-g.grow(1)
-g.step(1,7,2,6,0,False)
-g.grow(1)
-g.action_space(1)
+    def pprint(self):
+        print("\nRounds: ", self.rounds)
+        for r in range(8):
+            for c in range(8):
+                if self.gamebaord[0][r][c] == 1:
+                    print('🔴', end='')  # RedCircle
+                elif self.gamebaord[1][r][c] == 1:
+                    print('🔵', end='')  # BlueCircle
+                elif self.gamebaord[2][r][c] == 1:
+                    print('🟢', end='')  # GreenCircle
+                else:
+                    print('⚪', end='')  # white circle
+            print()
+            
+# g = Game()
+# g.grow(1)
+# g.step(1,7,2,6,0,False)
+# g.grow(1)
+# g.action_space(1)
