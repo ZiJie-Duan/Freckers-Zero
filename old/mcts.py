@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import numpy as np
-
+from pprint import pprint
 model = Conv3DStack()
 
 memory = [] # (game_tensor, )
@@ -23,7 +23,7 @@ class PointLoss(nn.Module):
             else:
                 term = (img_p[p[0]][p[1]][p[2]] - p[3]) ** 2
             loss = loss + term
-        loss = loss + prob_p
+        loss = loss + (prob_p[0] - value) ** 2
         return loss
 
 def train(model, memory, num_epochs=30):
@@ -63,6 +63,8 @@ class MCTSFreckerZero:
         self.children = [] #(child, (r,c,nr,nc)/(true,0,0,0)) 
         self.c = 2
         self.t = 1
+
+        self.meta_v = 0
 
         self.finished = False
 
@@ -127,27 +129,34 @@ class MCTSFreckerZero:
         if self.n == 0:
             for space in game.get_action_space(player):
                 actions[space[0]] = space[1:]
-            
+
             game_py_tensor, fogs_info = game.get_game_tensor(player)
+            #pprint.pprint(game_py_tensor)
             for loc, surface in fogs_info:
                 surface_map[loc] = surface
-            game_tensor = torch.tensor(game_py_tensor).flip(dims=[1, 2])
-            result, v = inference(model, game_tensor)
-            print(result.shape)
-            result = np.rot90(result, 2)[0]
-            v = v[0]
+
+            if player == Player.Red:
+                game_tensor = torch.tensor(game_py_tensor)
+                result, v = inference(model, game_tensor)
+            else:
+                game_tensor = torch.tensor(game_py_tensor).flip(dims=[1, 2])
+                result, v = inference(model, game_tensor)
+                result = np.rot90(result, 2)
+
+            
+            v = v[0][0]
+            result = result[0]
 
             for loc, action_group in actions.items():
                 for a in action_group:
                     self.children.append(
-                        (MCTSFreckerZero(result[surface_map[loc]][loc[0]][loc[1]]),
+                        (MCTSFreckerZero(result[surface_map[loc]][a[0]][a[1]]),
                         (loc[0], loc[1], a[0], a[1]))
                     )
 
             self.children.append(
                 (MCTSFreckerZero(result[6][5][5]),(True,0,0,0))
             )
-
             max = -999
             min = 999
             for c, a in self.children:
@@ -162,9 +171,13 @@ class MCTSFreckerZero:
             if visual == True:
                 game.pprint()
             self.n += 1
-            return v[0]
+            self.q = v
+            self.meta_v = v
+            return v, v
+        
 
         else:
+
             u_total = 0
             for c in self.children:
                 u_total += c[0].n
@@ -173,13 +186,13 @@ class MCTSFreckerZero:
             max_i = 0
             for i, child_With_action in enumerate(self.children):
                 c = child_With_action[0]
-                v = (c.w / (c.n + 0.000001)) + (c.c * c.p * (math.sqrt(u_total)) / (1+c.n))
+                v = self.q + (c.c * c.p * (math.sqrt(u_total)) / (1+c.n))
                 if max < v:
                     max = v
                     max_i = i
-                if False:
-                    print(f"CAL PUBT: c.w:{c.w/(c.n+0.01)}, c.c:{c.c}, c.p:{c.p}")
-                    print(f"PUBT: {v} , action: {child_With_action[1]}")
+                
+                # if player == Player.Red:
+                #     print(f"PUBT: {v} CAL PUBT: q:{c.q}, c.p:{c.p} c.n:{c.n} action: {child_With_action[1]}")
             
             #print(f"Choose: {self.children[max_i]}")
             # backp
@@ -192,23 +205,27 @@ class MCTSFreckerZero:
             if end:
                 self.finished = True
                 v = r
+                vacc = r
             else:
-                v = self.children[max_i][0].simu(game, Player.Red if player == Player.Blue else Player.Blue, visual)
+                v, vacc = self.children[max_i][0].simu(game, Player.Red if player == Player.Blue else Player.Blue, visual)
+
             self.w += v
             self.n += 1
-            return v
+            self.q = vacc + self.meta_v / self.n
+            return v, vacc + self.meta_v
+        
 
 
 for _ in range(10):
     memory = []
 
-    for _ in range(3):
+    for _ in range(2):
         game = MctsAcc()
         mcts = MCTSFreckerZero(1,game)
 
-        for i in range(60):
+        for i in range(130):
             print(f"Step {i+1}")
-            mcts.run(250)
+            mcts.run(150)
             if mcts.finished:
                 break
             mcts.go()

@@ -323,7 +323,7 @@ impl Game {
             None => 0 as f32,
         };
 
-        if self.round_counter >= 30{
+        if self.round_counter >= 100{
             r = self.eval(player) as f32;
             end = true;
         }
@@ -352,7 +352,7 @@ impl Game {
             None => 0 as f32,
         };
 
-        if self.round_counter >= 30{
+        if self.round_counter >= 100{
             r = self.eval(player) as f32;
             end = true;
         }

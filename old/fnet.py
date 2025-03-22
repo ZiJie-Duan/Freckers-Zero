@@ -12,18 +12,15 @@ class Conv3DStack(nn.Module):
         self.relu2 = nn.ReLU()
         self.conv3 = nn.Conv2d(128, 128, kernel_size=3, padding=1)
         self.relu3 = nn.ReLU()
-        self.conv4 = nn.Conv2d(128, 128, kernel_size=3, padding=1)
+        self.conv4 = nn.Conv2d(128, 120, kernel_size=3, padding=1)
         self.relu4 = nn.ReLU()
-        self.conv5 = nn.Conv2d(128, 128, kernel_size=3, padding=1)
+        self.conv5 = nn.Conv2d(128, 120, kernel_size=3, padding=1)
         self.relu5 = nn.ReLU()
         
 
         # 图像输出头
         self.img_head = nn.Conv2d(128, 7, kernel_size=3, padding=1)
-        self.fc_img1 = nn.Linear(7 * 8 * 8, 512)
-        self.relu_img1 = nn.ReLU()
-        self.fc_img2 = nn.Linear(512, 8 * 8 * 7)
-        self.softmax_img = nn.Softmax(dim=0)
+        self.relu_img = nn.ReLU()
 
         # 数值概率输出头
         self.prob_conv = nn.Conv2d(128, 3, kernel_size=3, padding=1)
@@ -31,24 +28,28 @@ class Conv3DStack(nn.Module):
         self.flatten = nn.Flatten()
         self.fc1 = nn.Linear(3 * 8 * 8, 64)
         self.relu_fc = nn.ReLU()
-        self.fc2 = nn.Linear(64, 1)
-        self.softmax = nn.Softmax(dim=0)
+        self.fc2 = nn.Linear(64, 2)
+        self.softmax = nn.Softmax(dim=1)
 
     def forward(self, x):
+        raw = x
         
         # 公共特征处理
         x = self.relu1(self.conv1(x))
         x = self.relu2(self.conv2(x))
         x = self.relu3(self.conv3(x))
-        x = self.relu4(self.conv4(x))
-        x = self.relu5(self.conv5(x))
+        x = self.conv4(x)
+        x = torch.cat((x, raw), dim=1)
+        x = self.relu4(x)
+        x = self.conv5(x)
+        x = torch.cat((x, raw), dim=1)
+        x = self.relu5(x)
+
+
 
         # 图像输出分支
         img_out = self.img_head(x)
-        img_out = self.flatten(img_out)
-        img_out = self.relu_img1(self.fc_img1(img_out))
-        img_out = self.fc_img2(img_out)
-        img_out = self.softmax_img(img_out).view(7, 8, 8)
+        img_out = self.relu_img(img_out)
 
         # 数值概率分支
         prob = self.relu9(self.prob_conv(x))
