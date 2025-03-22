@@ -1,0 +1,68 @@
+import numpy as np
+from scipy.signal import convolve2d
+
+class Game:
+
+    def __init__(self, rounds_limit = 100):
+        self.gamebaord = np.zeros((3,8,8),np.int8) # [red, blue, leaf]
+        self.gamebaord[0][0] = np.array([0,1,1,1,1,1,1,0]) # red
+        self.gamebaord[1][7] = np.array([0,1,1,1,1,1,1,0]) # blue
+        self.gamebaord[2][0] = np.array([1,1,1,1,1,1,1,1]) # leaf
+        self.gamebaord[2][1] = np.array([0,1,1,1,1,1,1,0]) # leaf
+        self.gamebaord[2][6] = np.array([0,1,1,1,1,1,1,0]) # leaf
+        self.gamebaord[2][7] = np.array([1,1,1,1,1,1,1,1]) # leaf
+        self.red = 0
+        self.blue = 1
+        self.leaf = 2
+        self.top_row = 0
+        self.bottom_row = 7
+        self.rounds = 0
+        self.rounds_limit = rounds_limit
+
+    def win_check(self):
+        if np.sum(self.gamebaord[self.red][self.bottom_row]) == 6:
+            return self.red
+        elif np.sum(self.gamebaord[self.blue][self.top_row]) == 6:
+            return self.blue
+        else:
+            return None
+
+    def grow(self, player):
+        """
+        player: 0, 1
+        grow Leaf
+        """
+        if player == 0:
+            layer = self.gamebaord[self.red]
+        else:
+            layer = self.gamebaord[self.blue]
+
+        kernel = np.ones((3, 3), dtype=np.uint8)
+        convolved = convolve2d(layer, kernel, mode='same', boundary='fill', fillvalue=0)
+        self.gamebaord[self.leaf] = np.where(convolved > 0, 1, self.gamebaord[self.leaf])
+
+    def step(self, player, r, c, rn, cn, grow = False):
+        """
+        return (S, R, S', done)
+        """
+        self.rounds += 1
+
+        s = self.gamebaord.copy()
+
+        if grow:
+            self.grow(player)
+        else:   
+            self.gamebaord[player][r][c] = 0
+            self.gamebaord[player][rn][cn] = 1
+            self.gamebaord[self.leaf][r][c] = 0
+        
+        winner = self.win_check()
+        reward = 0 if winner == None else 1 if winner == player else -1
+        done = False if (self.rounds < self.rounds_limit) and (winner == None) else True
+
+        return (
+            s,
+            reward,
+            self.gamebaord.copy(),
+            done
+        )

@@ -36,8 +36,6 @@ class Conv3DStack(nn.Module):
         
         # 公共特征处理
         x = self.relu1(self.conv1(x))
-        x = self.relu2(self.conv2(x))
-        x = self.relu3(self.conv3(x))
         x = self.conv4(x)
         x = torch.cat((x, raw), dim=1)
         x = self.relu4(x)

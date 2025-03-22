@@ -38,7 +38,7 @@ def train(model, memory, num_epochs=30):
         running_loss = 0.0
 
         for st, pi, value in memory:
-            st = torch.tensor(st).float().requires_grad_(True).unsqueeze(0)
+            st = torch.tensor(st.copy()).float().requires_grad_(True).unsqueeze(0)
             optimizer.zero_grad()
             result, v = model(st)
             result = result[0]
@@ -75,6 +75,11 @@ class MCTSFreckerZero:
             else:
                 self.simu(self.game.dclone(), self.player, visual = False)
 
+    def rotate_180(self, row, col):
+        new_row = 7 - row
+        new_col = 7 - col
+        return (new_row, new_col)
+
     def go(self):
         children_pubt = []
         max = -999
@@ -89,6 +94,10 @@ class MCTSFreckerZero:
                 max_i = i
 
         st, fogs_info = self.game.get_game_tensor(self.player)
+        if self.player == Player.Blue:
+            st = np.rot90(st, 2)
+            fogs_info = [(self.rotate_180(loc[0], loc[1]), surface) for loc, surface in fogs_info]
+
         surface_map = {}
         for loc, surface in fogs_info:
             surface_map[loc] = surface
@@ -98,7 +107,10 @@ class MCTSFreckerZero:
             if a[0] == True:
                 pi.append((True, children_pubt[i]))
             else:
-                pi.append((surface_map[(a[0], a[1])], a[2], a[3], children_pubt[i]))
+                if self.player == Player.Blue:
+                    pi.append((surface_map[self.rotate_180(a[0], a[1])], a[2], a[3], children_pubt[i]))
+                else:
+                    pi.append((surface_map[(a[0], a[1])], a[2], a[3], children_pubt[i]))
         
         memory.append((st, pi, self.children[max_i][0].w / self.children[max_i][0].n))
 
@@ -142,7 +154,6 @@ class MCTSFreckerZero:
                 game_tensor = torch.tensor(game_py_tensor).flip(dims=[1, 2])
                 result, v = inference(model, game_tensor)
                 result = np.rot90(result, 2)
-
             
             v = v[0][0]
             result = result[0]
@@ -153,6 +164,11 @@ class MCTSFreckerZero:
                         (MCTSFreckerZero(result[surface_map[loc]][a[0]][a[1]]),
                         (loc[0], loc[1], a[0], a[1]))
                     )
+
+            if TC == 1:
+                print("\n\n\n Play:", player,  result[6][5][5])
+                pprint(result)
+                input()
 
             self.children.append(
                 (MCTSFreckerZero(result[6][5][5]),(True,0,0,0))
@@ -191,8 +207,11 @@ class MCTSFreckerZero:
                     max = v
                     max_i = i
                 
-                # if player == Player.Red:
-                #     print(f"PUBT: {v} CAL PUBT: q:{c.q}, c.p:{c.p} c.n:{c.n} action: {child_With_action[1]}")
+                if TC == 1:
+                    print(f"PUBT: {v} CAL PUBT: q:{c.q}, c.p:{c.p} c.n:{c.n} action: {child_With_action[1]}")
+            if TC == 1:
+                print("Previous:", player)
+                input()
             
             #print(f"Choose: {self.children[max_i]}")
             # backp
@@ -215,22 +234,24 @@ class MCTSFreckerZero:
             return v, vacc + self.meta_v
         
 
-
+TC = 0
 for _ in range(10):
     memory = []
 
-    for _ in range(2):
+    for _ in range(1):
         game = MctsAcc()
         mcts = MCTSFreckerZero(1,game)
 
-        for i in range(130):
+        for i in range(150):
             print(f"Step {i+1}")
-            mcts.run(150)
+            mcts.run(800)
             if mcts.finished:
                 break
             mcts.go()
 
     train(model, memory, 20)
     model.eval()
+
+    TC += 1
 
     

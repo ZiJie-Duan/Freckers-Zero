@@ -28,29 +28,31 @@ impl MctsAcc {
         return true;
     }
 
-    fn iter_action_space_search(&self, row:i8, col:i8, actions:&mut Vec<(i8,i8)>, player:Player){
+    fn iter_action_space_search(&self, row:i8, col:i8, actions:&mut Vec<(i8,i8)>, player:Player, first:bool){
 
         let dirs = self.player_to_dirs(player);
 
         actions.push((row,col));
-
         for dir in dirs {
             // search space around the frog
             let (r,c) = dir.goFromLoc(row, col);
-            if self.loc_check(r,c) && 
-               self.game.get_game_board()[r as usize][c as usize] == CellType::LotusLeaf {
-                if !actions.contains(&(r,c)){
-                    actions.push(dir.goFromLoc(row, col));
-                }
-            } else {
-                // search jump position
-                let (r,c) = dir.goFromLoc(r,c);
-                if self.loc_check(r,c) && !actions.contains(&(r,c)){
-                    if self.game.get_game_board()[r as usize][c as usize] == CellType::LotusLeaf {
-                        self.iter_action_space_search(r, c, actions, player);
+            if self.loc_check(r,c) {
+                if first &&
+                self.game.get_game_board()[r as usize][c as usize] == CellType::LotusLeaf {
+                    if !actions.contains(&(r,c)){
+                        actions.push(dir.goFromLoc(row, col));
+                    }
+                } else if self.game.get_game_board()[r as usize][c as usize] != CellType::Empty {
+                    // search jump position
+                    let (r,c) = dir.goFromLoc(r,c);
+                    if self.loc_check(r,c) && !actions.contains(&(r,c)){
+                        if self.game.get_game_board()[r as usize][c as usize] == CellType::LotusLeaf {
+                            self.iter_action_space_search(r, c, actions, player, false);
+                        }
                     }
                 }
             }
+            
         }
     }
 
@@ -110,7 +112,7 @@ impl MctsAcc {
             for col in 0..8{
                 if gb[row][col] == player.into(){
                     let mut actions:Vec<(i8,i8)> = Vec::new();
-                    self.iter_action_space_search(row as i8, col as i8, &mut actions, player);
+                    self.iter_action_space_search(row as i8, col as i8, &mut actions, player, true);
                     if actions.len() != 1{
                         action_space.push(actions);
                     }
