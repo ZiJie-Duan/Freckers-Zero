@@ -32,7 +32,7 @@ class MCTS:
         self.children = [] 
         self.meta_value = 0
 
-    def select(self):
+    def select(self, game_temp):
         max = -999
         max_child = None
 
@@ -53,10 +53,13 @@ class MCTS:
             
             debug_rec.append((puct, child.action))
         
+        #-----------------------------------------------------
         if self.config.visulze:
             print("\n\ndebug_rec Player:", self.player)
+            game_temp.pprint()
             for i in range(len(debug_rec)):
                 print(debug_rec[i])
+        #-----------------------------------------------------
         
         return max_child
 
@@ -90,9 +93,8 @@ class MCTS:
 
         if self.n == 0:
             # eval
-            gameboard = game.get_gameboard()
-            action_prob, value = deep_frecker.run(gameboard.copy(), self.player)
-            rstk = RSTK(gameboard.copy())
+            action_prob, value = deep_frecker.run(game.get_gameboard(), self.player)
+            rstk = RSTK(game.get_gameboard())
             # expand
             self.expand(action_prob, rstk)
             # backp
@@ -104,7 +106,7 @@ class MCTS:
 
         else:
             # selection
-            child = self.select()
+            child = self.select(game)
             # move
             s,r,sn,end = game.step(self.player, *child.action)
 
@@ -162,7 +164,7 @@ class MCTS:
         data_record.add(self.game.get_gameboard(), pi, self.q, self.player)
 
         # make the game move
-        self.game.step(self.player,max_child.action[0],
+        s,r,sn,end = self.game.step(self.player,max_child.action[0],
                        max_child.action[1],max_child.action[2],
                        max_child.action[3],max_child.action[4])
         
@@ -178,13 +180,21 @@ class MCTS:
         self.children = max_child.children 
         self.meta_value = max_child.meta_value
 
+        return end
 
 def main():
     game = Game()
     mcts = MCTS(prob=1, action=(0,0,0,0,False), game=game, config=MctsConfig(), player=0)
-    for _ in range(150):
-        mcts.run_simu(200)
-        mcts.move()
+
+    for _ in range(10):
+        for i in range(160):
+            # if i > 140:
+            #     mcts.config.visulze = True
+            mcts.run_simu(200)
+            end = mcts.move()
+            if end:
+                break
+
 
 if __name__ == "__main__":
     main()

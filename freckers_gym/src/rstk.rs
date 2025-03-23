@@ -31,18 +31,23 @@ impl RSTK{
     fn iter_action_space_search(&self, row:i8, col:i8, actions:&mut Vec<(i8,i8)>, player:i8, first:bool){
 
         let dirs = self.player_to_dirs(player);
-
         actions.push((row,col));
+
         for dir in dirs {
             // search space around the frog
             let (r,c) = dir.goFromLoc(row, col);
             if self.loc_check(r,c) {
-                if first &&
-                self.gameboard[r as usize][c as usize] == 3 {
+                // in one step not go out of the gameboard
+
+                // if the first move, can move any direction around the forg
+                if first && self.gameboard[r as usize][c as usize] == 3 {
                     if !actions.contains(&(r,c)){
                         actions.push(dir.goFromLoc(row, col));
                     }
-                } else if self.gameboard[r as usize][c as usize] != 0 {
+                
+                // if the not the first move, can only do jump
+                } else if self.gameboard[r as usize][c as usize] == 1 ||
+                 self.gameboard[r as usize][c as usize] == 2 {
                     // search jump position
                     let (r,c) = dir.goFromLoc(r,c);
                     if self.loc_check(r,c) && !actions.contains(&(r,c)){
