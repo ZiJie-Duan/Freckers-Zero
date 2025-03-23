@@ -16,6 +16,7 @@ class MctsConfig:
         self.t = 1
         self.finish = False
         self.visulze = False
+        self.small = 0.0000001
 
 class MCTS:
     def __init__(self, prob, action, config, game=None, player=0) -> None:
@@ -38,6 +39,9 @@ class MCTS:
         # U(s,a) = C_puct * P(s,a) * Sqrt(Sum(N(s,b)_b_for_all_children)) / (1 + N(s,a)) 
         # all_num = Sqrt(Sum(N(s,b)_b_for_all_children))
         all_num = sqrt(sum([c.n for c in self.children]))
+
+        debug_rec = []
+
         for child in self.children:
 
             # puct = Q(s,a) + U(s,a)
@@ -46,6 +50,13 @@ class MCTS:
             if max < puct:
                 max = puct
                 max_child = child
+            
+            debug_rec.append((puct, child.action))
+        
+        if self.config.visulze:
+            print("\n\ndebug_rec Player:", self.player)
+            for i in range(len(debug_rec)):
+                print(debug_rec[i])
         
         return max_child
 
@@ -53,10 +64,9 @@ class MCTS:
     def expand(self, action_prob, rstk):
 
         for actions in rstk.get_action_space(self.player):
-
             base_loc = actions[0] # the location of the chess
             for action in actions[1:]: # loop to get the location where the chess will be placed
-
+                
                 self.children.append(
                     MCTS(
                         prob = action_prob[DeepFrecker.loc_trans(action[0], action[1])][base_loc[0]][base_loc[1]],
@@ -81,8 +91,8 @@ class MCTS:
         if self.n == 0:
             # eval
             gameboard = game.get_gameboard()
-            action_prob, value = deep_frecker.run(gameboard, self.player)
-            rstk = RSTK(gameboard)
+            action_prob, value = deep_frecker.run(gameboard.copy(), self.player)
+            rstk = RSTK(gameboard.copy())
             # expand
             self.expand(action_prob, rstk)
             # backp
@@ -132,7 +142,7 @@ class MCTS:
         v_order_rec = [] # get the probability of each action
 
         for i, child in enumerate(self.children):
-            v = (child.n)**(1/self.config.t) / t_v
+            v = (child.n)**(1/self.config.t) / (t_v + self.config.small)
             v_order_rec.append(v)
 
             # build up the strategy Pi(a,s)
@@ -172,8 +182,8 @@ class MCTS:
 def main():
     game = Game()
     mcts = MCTS(prob=1, action=(0,0,0,0,False), game=game, config=MctsConfig(), player=0)
-    for _ in range(3000):
-        mcts.run_simu(15)
+    for _ in range(150):
+        mcts.run_simu(200)
         mcts.move()
 
 if __name__ == "__main__":

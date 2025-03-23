@@ -1,5 +1,5 @@
 use std::cell::Cell;
-use pyo3::{ffi::printfunc, prelude::*};
+use pyo3::{ffi::{printfunc, PyInterpreterState}, prelude::*};
 use crate::game::{self, Action, CellType, Direction, Game, Player};
 use rand::seq::SliceRandom;
 
@@ -15,8 +15,8 @@ impl RSTK{
 
     fn player_to_dirs(&self, player: i8) -> [Direction; 5]{
         match player {
-            1 => self.blue_dirs,
-            2 => self.red_dirs,
+            1 => self.red_dirs,
+            2 => self.blue_dirs,
             _ => {panic!("error player not exist");}
         }
     }
@@ -64,7 +64,6 @@ impl RSTK {
     #[new]
     fn new(gameboard:[[[i8;8];8];3]) -> Self{
         // 0: empty, 1: player_1, 2: player_2, 3: Leaf
-        
         let mut gb = [[0;8];8];
         for r in 0..8{
             for c in 0..8{
@@ -104,6 +103,24 @@ impl RSTK {
             }
         }
         return action_space;
+    }
+
+    pub fn pprint(&self){
+        println!("\nRust Build-In GameBoard:");
+        for r in 0..8{
+            for c in 0..8{
+                if self.gameboard[r][c] == 1{
+                    print!("{}", "🔴");
+                } else if self.gameboard[r][c] == 2{
+                    print!("{}", "🔵");
+                } else if self.gameboard[r][c] == 3{
+                    print!("{}", "🟢");
+                } else {
+                    print!("{}", "⚪");
+                }
+            }
+            println!("");
+        }
     }
 
 }
