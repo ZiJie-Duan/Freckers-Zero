@@ -24,8 +24,7 @@ class Conv3DStack(nn.Module):
         self.flatten = nn.Flatten()
         self.fc1 = nn.Linear(5 * 8 * 8, 64)
         self.relu_fc = nn.ReLU()
-        self.fc2 = nn.Linear(64, 2)
-        self.softmax = nn.Softmax(dim=1)
+        self.fc2 = nn.Linear(64, 1)
 
     def forward(self, x):
         raw = x
@@ -43,7 +42,7 @@ class Conv3DStack(nn.Module):
         prob = self.flatten(prob)
         prob = self.relu_fc(self.fc1(prob))
         prob = self.fc2(prob)
-        prob_out = self.softmax(prob)
+        prob_out = torch.tanh(prob)
 
         return img_out, prob_out
 
@@ -52,10 +51,6 @@ class Conv3DStack(nn.Module):
 def train(model, train_loader, num_epochs=10):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
-    
-    # 双损失函数：图像用MSE，概率用交叉熵
-    criterion_img = nn.MSELoss()
-    criterion_prob = nn.CrossEntropyLoss()
     
     optimizer = optim.Adam(model.parameters(), lr=0.001)
 
@@ -71,11 +66,12 @@ def train(model, train_loader, num_epochs=10):
             p_action_prob, p_value = model(gameboard)
             # 计算双损失
             loss_img = F.mse_loss(p_action_prob, action_prob)
-            loss_prob = F.mse_loss(p_value, value)
+
+            loss_prob = F.mse_loss(p_value.view(-1), value)
             total_loss = loss_img + loss_prob
             
             total_loss.backward()
             optimizer.step()
             running_loss += total_loss.item()
 
-        print(f"Epoch {epoch+1}, Total Loss: {running_loss/len(train_loader):.4f}")
+        print(f"Epoch {epoch+1}, Total Loss: {running_loss/len(train_loader):.8f}")

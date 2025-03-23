@@ -8,7 +8,7 @@ from game import Game
 import os
 
 deep_frecker = DeepFrecker()
-data_record = DataRecord(file=r"C:\Users\lucyc\Desktop\freckers_zero\data.h5", save_interval=50)
+data_record = DataRecord(file=r"C:\Users\lucyc\Desktop\freckers_zero\data.h5")
 
 class MctsConfig:
     def __init__(self) -> None:
@@ -17,6 +17,9 @@ class MctsConfig:
         self.finish = False
         self.visulze = False
         self.small = 0.0000001
+
+        self.dirichlet_alpha = 0.03
+        self.dirichlet_epsilon = 0.25
 
 class MCTS:
     def __init__(self, prob, action, config, game=None, player=0) -> None:
@@ -65,6 +68,12 @@ class MCTS:
         return max_child
 
 
+    def add_dirichlet_noise(self):
+        dirichlet_noise = np.random.dirichlet([self.config.dirichlet_alpha] * len(self.children))
+        for i, child in enumerate(self.children):
+            child.p = child.p * (1 - self.config.dirichlet_epsilon) + dirichlet_noise[i] * self.config.dirichlet_epsilon
+
+
     def expand(self, action_prob, rstk):
 
         for actions in rstk.get_action_space(self.player):
@@ -88,6 +97,8 @@ class MCTS:
                 player = 0 if self.player == 1 else 1
                 )
         )
+
+        self.add_dirichlet_noise()
             
 
     def simu(self, game):
@@ -119,6 +130,10 @@ class MCTS:
             else:
                 # go deeper
                 value,r = child.simu(game)
+                # inverse value and r 
+                value = -1 * value
+                r = -1 * r
+
                 # backp
                 self.n += 1
                 self.w += value
@@ -162,7 +177,9 @@ class MCTS:
             pi[i] = tuple(pi[i])
 
         # record the data
-        data_record.add(self.game.get_gameboard(), pi, self.q, self.player)
+        data_record.add(self.game.get_gameboard(), pi, 0, self.player)
+        # here we pass a temp value 0, because we want to update the value later
+        # the value depends on the end of the game
 
         # make the game move
         s,r,sn,end = self.game.step(self.player,max_child.action[0],
@@ -181,23 +198,25 @@ class MCTS:
         self.children = max_child.children 
         self.meta_value = max_child.meta_value
 
+        if end:
+            data_record.update_value_and_save(r)
+
         return end
 
 def main():
-    for _ in range(3):
-
+    for _ in range(20):
         for _ in range(2):
             game = Game()
             mcts = MCTS(prob=1, action=(0,0,0,0,False), game=game, config=MctsConfig(), player=0)
 
-            for i in range(160):
-                mcts.run_simu(200)
+            for i in range(20):
+                mcts.run_simu(300)
                 end = mcts.move()
                 if end:
                     break
 
         deep_frecker.train(r"C:\Users\lucyc\Desktop\freckers_zero\data.h5")
-        #os.remove(r"C:\Users\lucyc\Desktop\freckers_zero\data.h5")
+        os.remove(r"C:\Users\lucyc\Desktop\freckers_zero\data.h5")
 
 if __name__ == "__main__":
     main()

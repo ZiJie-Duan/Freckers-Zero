@@ -3,7 +3,7 @@ from scipy.signal import convolve2d
 
 class Game:
 
-    def __init__(self, rounds_limit = 150):
+    def __init__(self, rounds_limit = 5):
         self.gamebaord = np.zeros((3,8,8),np.int8) # [red, blue, leaf]
         self.gamebaord[0][0] = np.array([0,1,1,1,1,1,1,0]) # red
         self.gamebaord[1][7] = np.array([0,1,1,1,1,1,1,0]) # blue

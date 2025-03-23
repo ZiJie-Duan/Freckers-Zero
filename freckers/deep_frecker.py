@@ -52,19 +52,19 @@ class FreckerDataSet(Dataset):
 
 
 class DataRecord:
-    def __init__(self, file = "data.h5", save_interval = 3000):
+    def __init__(self, file = "data.h5"):
         self.file = file
         self.count = 0
         self.write_first = True
-        self.save_interval = save_interval
 
         # 初始化三个独立数组容器
         self.memo_gameboard = np.empty((0, 3, 8, 8), dtype=np.float32)
         self.memo_action_prob = np.empty((0, 65, 8, 8), dtype=np.float32)
-        self.memo_value = np.empty((0,2), dtype=np.float32)
+        self.memo_value = np.empty((0,), dtype=np.float32)
         
     def rotate_point180(self, x, y):
         return 8 - x, 8 - y
+
 
     def add(self, gameboard, action_prob, value, player):
         """
@@ -86,15 +86,22 @@ class DataRecord:
 
         gameboard = np.array([gameboard], dtype=np.float32)
         action_prob_m = np.array([action_prob_m], dtype=np.float32)
-        value = np.array([[value, 1-value]], dtype=np.float32)
+        value = np.array([value], dtype=np.float32)
 
         self.memo_gameboard = np.concatenate((self.memo_gameboard, gameboard))
         self.memo_action_prob = np.concatenate((self.memo_action_prob, action_prob_m))
         self.memo_value = np.concatenate((self.memo_value, value))
         self.count += 1
+    
 
-        if self.count % self.save_interval == 0:
-            self.save()
+    def update_value_and_save(self, value):
+        p = -1 * value if len(self.memo_value) % 2 == 0 else value
+        for i in range(len(self.memo_value)):
+            self.memo_value[i] = p
+            p = -1 * p
+
+        self.save()
+
 
     def save(self):
         with h5py.File(self.file, 'a') as f:  # 始终使用追加模式
@@ -115,7 +122,7 @@ class DataRecord:
                 f.create_dataset(
                     'value',
                     data=self.memo_value,
-                    maxshape=(None,2),
+                    maxshape=(None,),
                     chunks=True
                 )
             else:
@@ -136,7 +143,7 @@ class DataRecord:
         # 清空缓存
         self.memo_gameboard = np.empty((0, 3, 8, 8), dtype=np.int32)
         self.memo_action_prob = np.empty((0, 65, 8, 8), dtype=np.int32)
-        self.memo_value = np.empty((0,2), dtype=np.int32)
+        self.memo_value = np.empty((0,), dtype=np.int32)
 
 
 
@@ -202,7 +209,7 @@ class DeepFrecker:
             num_workers=num_workers
         )
 
-        train(self.model, dataloader, 8)
+        train(self.model, dataloader, 2)
 
 # if __name__ == '__main__':
 #     df = DeepFrecker()
