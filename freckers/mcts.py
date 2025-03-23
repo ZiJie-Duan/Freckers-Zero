@@ -5,14 +5,14 @@ from deep_frecker import DataRecord
 import numpy as np
 import copy
 from game import Game
+import os
 
-print("start")
 deep_frecker = DeepFrecker()
-data_record = DataRecord(file=r"C:\Users\lucyc\Desktop\freckers_zero\data.h5", save_interval=300)
+data_record = DataRecord(file=r"C:\Users\lucyc\Desktop\freckers_zero\data.h5", save_interval=50)
 
 class MctsConfig:
     def __init__(self) -> None:
-        self.c = 2
+        self.c = 1.5
         self.t = 1
         self.finish = False
         self.visulze = False
@@ -51,14 +51,15 @@ class MCTS:
                 max = puct
                 max_child = child
             
-            debug_rec.append((puct, child.action))
+            debug_rec.append((puct, child.action, child.n, child.w, child.q, child.p))
         
         #-----------------------------------------------------
         if self.config.visulze:
             print("\n\ndebug_rec Player:", self.player)
-            game_temp.pprint()
+            game_temp.pprint(debug = True)
             for i in range(len(debug_rec)):
                 print(debug_rec[i])
+            input("Press Enter to continue...")
         #-----------------------------------------------------
         
         return max_child
@@ -183,18 +184,20 @@ class MCTS:
         return end
 
 def main():
-    game = Game()
-    mcts = MCTS(prob=1, action=(0,0,0,0,False), game=game, config=MctsConfig(), player=0)
+    for _ in range(3):
 
-    for _ in range(10):
-        for i in range(160):
-            # if i > 140:
-            #     mcts.config.visulze = True
-            mcts.run_simu(200)
-            end = mcts.move()
-            if end:
-                break
+        for _ in range(2):
+            game = Game()
+            mcts = MCTS(prob=1, action=(0,0,0,0,False), game=game, config=MctsConfig(), player=0)
 
+            for i in range(160):
+                mcts.run_simu(200)
+                end = mcts.move()
+                if end:
+                    break
+
+        deep_frecker.train(r"C:\Users\lucyc\Desktop\freckers_zero\data.h5")
+        #os.remove(r"C:\Users\lucyc\Desktop\freckers_zero\data.h5")
 
 if __name__ == "__main__":
     main()

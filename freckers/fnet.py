@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import torch.nn.functional as F
 
 class Conv3DStack(nn.Module):
     def __init__(self):
@@ -61,17 +62,16 @@ def train(model, train_loader, num_epochs=10):
     for epoch in range(num_epochs):
         model.train()
         running_loss = 0.0
-        for inputs, targets_img, targets_prob in train_loader:
-            inputs = inputs.to(device)
-            targets_img = targets_img.to(device)
-            targets_prob = targets_prob.to(device)
+        for gameboard, action_prob, value in train_loader:
+            gameboard = gameboard.to(device)
+            action_prob = action_prob.to(device)
+            value = value.to(device)
 
             optimizer.zero_grad()
-            outputs_img, outputs_prob = model(inputs)
-
+            p_action_prob, p_value = model(gameboard)
             # 计算双损失
-            loss_img = criterion_img(outputs_img, targets_img)
-            loss_prob = criterion_prob(outputs_prob, targets_prob)
+            loss_img = F.mse_loss(p_action_prob, action_prob)
+            loss_prob = F.mse_loss(p_value, value)
             total_loss = loss_img + loss_prob
             
             total_loss.backward()

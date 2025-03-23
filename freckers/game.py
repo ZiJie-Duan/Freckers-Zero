@@ -75,8 +75,9 @@ class Game:
     def get_gameboard(self):
         return self.gamebaord.copy()
 
-    def pprint(self):
-        print("\nRounds: ", self.rounds)
+    def pprint(self, debug = False):
+        if not debug:
+            print("\nRounds: ", self.rounds)
         for r in range(8):
             for c in range(8):
                 if self.gamebaord[0][r][c] == 1:
