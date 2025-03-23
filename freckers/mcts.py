@@ -6,8 +6,9 @@ import numpy as np
 import copy
 from game import Game
 
+print("start")
 deep_frecker = DeepFrecker()
-data_record = DataRecord(file=r"C:\Users\lucyc\Desktop\freckers_zero\data.h5")
+data_record = DataRecord(file=r"C:\Users\lucyc\Desktop\freckers_zero\data.h5", save_interval=300)
 
 class MctsConfig:
     def __init__(self) -> None:
@@ -157,6 +158,7 @@ class MCTS:
         
         # update the node
         self.game.pprint()
+        print("move action: ", max_child.action)
         self.player = max_child.player
         self.n = max_child.n # add 1 when backp
         self.w = max_child.w # add v when backp
@@ -170,8 +172,8 @@ class MCTS:
 def main():
     game = Game()
     mcts = MCTS(prob=1, action=(0,0,0,0,False), game=game, config=MctsConfig(), player=0)
-    for _ in range(100):
-        mcts.run_simu(150)
+    for _ in range(3000):
+        mcts.run_simu(15)
         mcts.move()
 
 if __name__ == "__main__":

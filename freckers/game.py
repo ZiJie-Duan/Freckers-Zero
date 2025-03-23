@@ -73,7 +73,7 @@ class Game:
         )
 
     def get_gameboard(self):
-        return self.gamebaord
+        return self.gamebaord.copy()
 
     def pprint(self):
         print("\nRounds: ", self.rounds)
