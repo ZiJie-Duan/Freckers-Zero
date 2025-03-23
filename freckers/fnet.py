@@ -13,6 +13,8 @@ class Conv3DStack(nn.Module):
         self.relu2 = nn.ReLU()
         self.conv3 = nn.Conv2d(256, 256, kernel_size=3, padding=1)
         self.relu3 = nn.ReLU()
+        self.conv4 = nn.Conv2d(256, 256, kernel_size=3, padding=1)
+        self.relu4 = nn.ReLU()
         
         # 图像输出头
         self.img_head = nn.Conv2d(256, 65, kernel_size=3, padding=1)
@@ -32,6 +34,7 @@ class Conv3DStack(nn.Module):
         x = self.relu1(self.conv1(x))
         x = self.relu2(self.conv2(x))
         x = self.relu3(self.conv3(x))
+        x = self.relu4(self.conv4(x))
 
         # 图像输出分支
         img_out = self.img_head(x)
@@ -47,12 +50,51 @@ class Conv3DStack(nn.Module):
         return img_out, prob_out
 
 
+class MaskLoss(nn.Module):
+    def __init__(self):
+        super(MaskLoss, self).__init__()
+
+    def forward(self, predictions, targets):
+        musk = targets != 0.0
+        loss = F.mse_loss(predictions[musk], targets[musk])
+        return loss
+
 
 def train(model, train_loader, num_epochs=10):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
     
-    optimizer = optim.Adam(model.parameters(), lr=0.001)
+    optimizer = optim.Adam(model.parameters(), lr=0.0001)
+    mask_loss = MaskLoss()
+
+    for epoch in range(num_epochs):
+        model.train()
+        running_loss = 0.0
+        for gameboard, action_prob, value in train_loader:
+            gameboard = gameboard.to(device)
+            action_prob = action_prob.to(device)
+            value = value.to(device)
+
+            optimizer.zero_grad()
+            p_action_prob, p_value = model(gameboard)
+            # 计算双损失
+            loss_img = mask_loss(p_action_prob, action_prob)
+            loss_prob = F.mse_loss(p_value.view(-1), value)
+            total_loss = loss_img + loss_prob
+            
+            total_loss.backward()
+            optimizer.step()
+            running_loss += total_loss.item()
+
+        print(f"Epoch {epoch+1}, Total Loss: {running_loss/len(train_loader):.8f}")
+
+
+
+def train_bk(model, train_loader, num_epochs=10):
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model.to(device)
+    
+    optimizer = optim.Adam(model.parameters(), lr=0.0001)
 
     for epoch in range(num_epochs):
         model.train()
@@ -75,3 +117,5 @@ def train(model, train_loader, num_epochs=10):
             running_loss += total_loss.item()
 
         print(f"Epoch {epoch+1}, Total Loss: {running_loss/len(train_loader):.8f}")
+
+

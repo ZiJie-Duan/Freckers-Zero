@@ -7,9 +7,6 @@ import copy
 from game import Game
 import os
 
-deep_frecker = DeepFrecker()
-data_record = DataRecord(file=r"C:\Users\lucyc\Desktop\freckers_zero\data.h5")
-
 class MctsConfig:
     def __init__(self) -> None:
         self.c = 1.5
@@ -22,7 +19,10 @@ class MctsConfig:
         self.dirichlet_epsilon = 0.25
 
 class MCTS:
-    def __init__(self, prob, action, config, game=None, player=0) -> None:
+    def __init__(self, prob, action, config, deep_frecker, 
+                 data_record=None, game=None, player=0) -> None:
+        self.deep_frecker = deep_frecker
+        self.data_record = data_record
         self.game = game
         self.player = player # 0/1
         self.config = config
@@ -85,7 +85,8 @@ class MCTS:
                         prob = action_prob[DeepFrecker.loc_trans(action[0], action[1])][base_loc[0]][base_loc[1]],
                         action = (base_loc[0], base_loc[1], action[0], action[1], False),
                         config = self.config,
-                        player = 0 if self.player == 1 else 1
+                        player = 0 if self.player == 1 else 1,
+                        deep_frecker=self.deep_frecker
                         )
                 )
 
@@ -94,7 +95,8 @@ class MCTS:
                 prob = action_prob[5][5][5], # fix the location of grow probability
                 action = (0, 0, 0, 0, True), # grow
                 config = self.config,
-                player = 0 if self.player == 1 else 1
+                player = 0 if self.player == 1 else 1,
+                deep_frecker=self.deep_frecker
                 )
         )
 
@@ -105,7 +107,7 @@ class MCTS:
 
         if self.n == 0:
             # eval
-            action_prob, value = deep_frecker.run(game.get_gameboard(), self.player)
+            action_prob, value = self.deep_frecker.run(game.get_gameboard(), self.player)
             rstk = RSTK(game.get_gameboard())
             # expand
             self.expand(action_prob, rstk)
@@ -177,7 +179,7 @@ class MCTS:
             pi[i] = tuple(pi[i])
 
         # record the data
-        data_record.add(self.game.get_gameboard(), pi, 0, self.player)
+        self.data_record.add(self.game.get_gameboard(), pi, 0, self.player)
         # here we pass a temp value 0, because we want to update the value later
         # the value depends on the end of the game
 
@@ -199,26 +201,37 @@ class MCTS:
         self.meta_value = max_child.meta_value
 
         if end:
-            data_record.update_value_and_save(r)
+            self.data_record.update_value_and_save(r)
 
         return end
 
-def main():
-    for _ in range(20):
-        for _ in range(2):
-            game = Game()
-            mcts = MCTS(prob=1, action=(0,0,0,0,False), game=game, config=MctsConfig(), player=0)
 
-            for i in range(20):
-                mcts.run_simu(300)
-                end = mcts.move()
-                if end:
-                    break
+def mcts_data_collect(model, thread_num, file, rounds=100, sim_step=300):
+    deep_frecker = DeepFrecker()
+    data_record = DataRecord(file=file)
 
-        deep_frecker.train(r"C:\Users\lucyc\Desktop\freckers_zero\data.h5")
-        os.remove(r"C:\Users\lucyc\Desktop\freckers_zero\data.h5")
+    for j in range(rounds):
 
-if __name__ == "__main__":
-    main()
+        game = Game()
+        mcts = MCTS(prob=2, action=(0,0,0,0,False), 
+                    game=game, config=MctsConfig(), player=0,
+                    deep_frecker=deep_frecker, data_record=data_record)
 
+        for i in range(300):
+
+            print("线程", thread_num, "第", j, "轮游戏 ", "第", i, "步 模拟进行中")
+            if i > 60:
+                mcts.config.t = 0.5
+            elif i > 90:
+                mcts.config.t = 0.01
+            else:
+                mcts.config.t = 1
+            # if i > 100:
+            #     mcts.config.visulze = True
+            # else:
+            #     mcts.config.visulze = False
+            mcts.run_simu(sim_step)
+            end = mcts.move()
+            if end:
+                break
 

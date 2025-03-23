@@ -103,8 +103,11 @@ class DataRecord:
         self.save()
 
 
-    def save(self):
-        with h5py.File(self.file, 'a') as f:  # 始终使用追加模式
+    def save(self, file=None):
+        if file == None:
+            file = self.file
+
+        with h5py.File(file, 'a') as f:  # 始终使用追加模式
             # 初始化数据集（如果不存在）
             if 'gameboard' not in f:
                 f.create_dataset(
@@ -189,7 +192,7 @@ class DeepFrecker:
         return (row*8 + col) 
 
 
-    def train(self, file):
+    def train(self, file, epoch):
 
         # HDF5文件路径和数据集名称
         file_path = file
@@ -198,7 +201,7 @@ class DeepFrecker:
         dataset = FreckerDataSet(file_path)
 
         # 创建 DataLoader 对象
-        batch_size = 32  # 每个批次的大小
+        batch_size = 128  # 每个批次的大小
         shuffle = True   # 是否打乱数据
         num_workers = 4  # 使用多少个子进程加载数据
 
@@ -206,11 +209,27 @@ class DeepFrecker:
             dataset,
             batch_size=batch_size,
             shuffle=shuffle,
-            num_workers=num_workers
+            num_workers=num_workers,
+            persistent_workers=True 
         )
 
-        train(self.model, dataloader, 2)
+        train(self.model, dataloader, epoch)
+
+    def save_model(self, file):
+        torch.save(self.model, file)
+
+    def load_model(self, file):
+        self.model = torch.load(file)
+
+
 
 # if __name__ == '__main__':
-#     df = DeepFrecker()
-#     df.train(r"C:\Users\lucyc\Desktop\freckers_zero\data.h5")
+#     dataset = FreckerDataSet(r"C:\Users\lucyc\Desktop\freckers_zero\data.h5")
+#     print(dataset.gameboard.shape)
+#     print(dataset.action_prob.shape)
+#     print(dataset.value.shape)
+
+#     gameboard, action_prob, value = dataset[6595]
+#     print(gameboard)
+#     print(action_prob)
+#     print(value)
