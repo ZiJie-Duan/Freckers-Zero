@@ -9,7 +9,7 @@ import os
 
 class MctsConfig:
     def __init__(self) -> None:
-        self.c = 1.5
+        self.c = 2
         self.t = 1
         self.finish = False
         self.visulze = False
@@ -131,7 +131,7 @@ class MCTS:
             if end:
                 self.n += 1
                 self.w += r
-                self.q = (r + self.meta_value) / self.n
+                self.q = self.w / self.n
                 return r,r # if end, return the reward instead of the estimated value
             else:
                 # go deeper
@@ -143,7 +143,7 @@ class MCTS:
                 # backp
                 self.n += 1
                 self.w += value
-                self.q = (value + self.meta_value) / self.n
+                self.q = self.w / self.n
 
             return value,r # if not end, return the estimated value and the child's reward
     
