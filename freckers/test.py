@@ -132,7 +132,7 @@ class MctsConfig:
         self.visulze = False
         self.small = 0.0000001
 
-        self.dirichlet_alpha = 2
+        self.dirichlet_alpha = 0.03
         self.dirichlet_epsilon = 0.25
 
 data_record = DataRecord(file="test.h5")

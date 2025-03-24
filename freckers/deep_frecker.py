@@ -151,10 +151,17 @@ class DataRecord:
 
 
 class DeepFrecker:
-    def __init__(self):
-        self.model = Conv3DStack()
-    
+    def __init__(self, model, model2=None):
+        self.model = model
+        self.model2 = model2
+
     def run(self, gameboard, player):
+        model = None
+        if self.model2 != None and player == 1:
+            model = self.model2
+        else:
+            model = self.model
+
         # 待验证
         if player == 0:
             input_data = gameboard
@@ -162,7 +169,7 @@ class DeepFrecker:
             input_data = np.rot90(gameboard, 2) # rotate 180 degrees
             input_data[[0, 1]] = input_data[[1, 0]] # swap red and blue
 
-        action_prob, value = self.inference(input_data)
+        action_prob, value = self.inference(input_data, model)
 
         if player == 0:
             return action_prob[0], value[0]
@@ -170,10 +177,10 @@ class DeepFrecker:
             return np.rot90(action_prob, 2)[0], value[0]
 
     
-    def inference(self, input_data):
+    def inference(self, input_data, model):
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.model.eval()
-        self.model.to(device)
+        model.eval()
+        model.to(device)
 
         with torch.no_grad():
             input_tensor = torch.tensor(input_data.copy()).float()
@@ -181,7 +188,7 @@ class DeepFrecker:
             if len(input_tensor.shape) == 3:
                 input_tensor = input_tensor.unsqueeze(0)
             
-            img_output, prob_output = self.model(input_tensor)
+            img_output, prob_output = model(input_tensor)
             
             img_output = img_output.cpu().numpy()
             prob_output = prob_output.cpu().numpy()

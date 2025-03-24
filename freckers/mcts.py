@@ -7,17 +7,6 @@ import copy
 from game import Game
 import os
 
-class MctsConfig:
-    def __init__(self) -> None:
-        self.c = 1
-        self.t = 1
-        self.finish = False
-        self.visulze = False
-        self.small = 0.0000001
-
-        self.dirichlet_alpha = 0.03
-        self.dirichlet_epsilon = 0.25
-
 class MCTS:
     def __init__(self, prob, action, config, deep_frecker, 
                  data_record=None, game=None, player=0) -> None:
@@ -218,8 +207,8 @@ class MCTS:
         return end
 
 
-def mcts_data_collect(model, thread_num, file, config, rounds=100, sim_step=300):
-    deep_frecker = DeepFrecker()
+def mcts_data_collect(model, thread_num, file, config, rounds=100, sim_step=300, model2=None):
+    deep_frecker = DeepFrecker(model, model2)
     data_record = DataRecord(file=file)
 
     for j in range(rounds):

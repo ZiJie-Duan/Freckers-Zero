@@ -14,6 +14,17 @@ pid = win32api.GetCurrentProcessId()
 handle = win32api.OpenProcess(win32con.PROCESS_ALL_ACCESS, True, pid)
 win32process.SetPriorityClass(handle, win32process.HIGH_PRIORITY_CLASS)
 
-#model = torch.load(r"C:\Users\lucyc\Desktop\freckers_data\batch_2_no_inverse.pth", weights_only=False)
-model = Conv3DStack()
-mcts_data_collect(model, "N", f"C:\\Users\\lucyc\\Desktop\\freckers_data\\New_v1.h5", 1000, 600)
+class MctsConfig:
+    def __init__(self) -> None:
+        self.c = 1.5
+        self.t = 1
+        self.finish = False
+        self.visulze = False
+        self.small = 0.0000001
+
+        self.dirichlet_alpha = 0.03
+        self.dirichlet_epsilon = 0.25
+
+model = torch.load(r"C:\Users\lucyc\Desktop\freckers_data\New_Fix_v4_Mix234.pth", weights_only=False)
+#model = Conv3DStack()
+mcts_data_collect(model, "N", r"C:\Users\lucyc\Desktop\freckers_data\New_Fix_v5.h5", MctsConfig(), 1000, 200)
