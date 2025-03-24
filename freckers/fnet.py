@@ -3,18 +3,49 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 
+class ResidualBlock(nn.Module):
+    def __init__(self, in_channels, out_channels, stride=1):
+        super(ResidualBlock, self).__init__()
+        self.conv1 = nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=stride, padding=1)
+        self.bn1 = nn.BatchNorm2d(out_channels)
+        self.relu = nn.ReLU(inplace=True)
+        self.conv2 = nn.Conv2d(out_channels, out_channels, kernel_size=3, stride=1, padding=1)
+        self.bn2 = nn.BatchNorm2d(out_channels)
+
+        self.downsample = None
+        if stride != 1 or in_channels != out_channels:
+            self.downsample = nn.Sequential(
+                nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=stride),
+                nn.BatchNorm2d(out_channels)
+            )
+
+    def forward(self, x):
+        identity = x
+
+        out = self.conv1(x)
+        out = self.bn1(out)
+        out = self.relu(out)
+
+        out = self.conv2(out)
+        out = self.bn2(out)
+
+        if self.downsample is not None:
+            identity = self.downsample(x)
+
+        out += identity
+        out = self.relu(out)
+
+        return out
+
+
 class Conv3DStack(nn.Module):
     def __init__(self):
         super(Conv3DStack, self).__init__()
         # 公共特征提取部分
         self.conv1 = nn.Conv2d(3, 256, kernel_size=3, padding=1)
         self.relu1 = nn.ReLU()
-        self.conv2 = nn.Conv2d(256, 256, kernel_size=3, padding=1)
-        self.relu2 = nn.ReLU()
-        self.conv3 = nn.Conv2d(256, 256, kernel_size=3, padding=1)
-        self.relu3 = nn.ReLU()
-        self.conv4 = nn.Conv2d(256, 256, kernel_size=3, padding=1)
-        self.relu4 = nn.ReLU()
+        self.residual_block1 = ResidualBlock(256, 256)
+        self.residual_block2 = ResidualBlock(256, 256)
         
         # 图像输出头
         self.img_head = nn.Conv2d(256, 65, kernel_size=3, padding=1)
@@ -32,9 +63,8 @@ class Conv3DStack(nn.Module):
         raw = x
         # 公共特征处理
         x = self.relu1(self.conv1(x))
-        x = self.relu2(self.conv2(x))
-        x = self.relu3(self.conv3(x))
-        x = self.relu4(self.conv4(x))
+        x = self.residual_block1(x)
+        x = self.residual_block2(x)
 
         # 图像输出分支
         img_out = self.img_head(x)

@@ -14,5 +14,6 @@ pid = win32api.GetCurrentProcessId()
 handle = win32api.OpenProcess(win32con.PROCESS_ALL_ACCESS, True, pid)
 win32process.SetPriorityClass(handle, win32process.HIGH_PRIORITY_CLASS)
 
-model = torch.load(r"C:\Users\lucyc\Desktop\freckers_data\batch_2_no_inverse.pth", weights_only=False)
-mcts_data_collect(model, "N", f"C:\\Users\\lucyc\\Desktop\\freckers_data\\batch_3_no_inverse.h5", 30, 400)
+#model = torch.load(r"C:\Users\lucyc\Desktop\freckers_data\batch_2_no_inverse.pth", weights_only=False)
+model = Conv3DStack()
+mcts_data_collect(model, "N", f"C:\\Users\\lucyc\\Desktop\\freckers_data\\New_v1.h5", 100, 400)

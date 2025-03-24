@@ -41,7 +41,9 @@ class MCTS:
 
         # U(s,a) = C_puct * P(s,a) * Sqrt(Sum(N(s,b)_b_for_all_children)) / (1 + N(s,a)) 
         # all_num = Sqrt(Sum(N(s,b)_b_for_all_children))
-        all_num = sqrt(sum([c.n for c in self.children]))
+        # all_num = sqrt(sum([c.n for c in self.children]))
+        # all_num = Sqrt(Parents.N)
+        all_num = sqrt(self.n)
 
         debug_rec = []
 
@@ -100,8 +102,10 @@ class MCTS:
                 )
         )
 
-        self.add_dirichlet_noise()
-            
+        # add dirichlet noise when the game start the first step
+        if self.game != None:
+            print("add dirichlet noise")
+            self.add_dirichlet_noise()
 
     def simu(self, game):
 
@@ -200,6 +204,10 @@ class MCTS:
         self.children = max_child.children 
         self.meta_value = max_child.meta_value
 
+        # add dirichlet noise when the tree change the node
+        print("add dirichlet noise")
+        self.add_dirichlet_noise()
+
         if end:
             self.data_record.update_value_and_save(r)
 
@@ -220,9 +228,9 @@ def mcts_data_collect(model, thread_num, file, rounds=100, sim_step=300):
         for i in range(300):
 
             print("线程", thread_num, "第", j, "轮游戏 ", "第", i, "步 模拟进行中")
-            if i > 60:
-                mcts.config.t = 0.5
-            elif i > 90:
+            if i > 30:
+                mcts.config.t = 0.2
+            elif i > 60:
                 mcts.config.t = 0.01
             else:
                 mcts.config.t = 1
