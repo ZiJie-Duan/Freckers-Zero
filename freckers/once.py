@@ -5,7 +5,14 @@ import torch.optim as optim
 import torch.nn.functional as F
 from fnet import MaskLoss, Conv3DStack
 from mcts import mcts_data_collect
+import win32api
+import win32process
+import win32con
 
+# 获取当前进程句柄
+pid = win32api.GetCurrentProcessId()
+handle = win32api.OpenProcess(win32con.PROCESS_ALL_ACCESS, True, pid)
+win32process.SetPriorityClass(handle, win32process.HIGH_PRIORITY_CLASS)
 
-model = Conv3DStack()
-mcts_data_collect(model, "N", f"C:\\Users\\lucyc\\Desktop\\freckers_data\\batch_1.h5", 30, 500)
+model = torch.load(r"C:\Users\lucyc\Desktop\freckers_data\batch_2_no_inverse.pth", weights_only=False)
+mcts_data_collect(model, "N", f"C:\\Users\\lucyc\\Desktop\\freckers_data\\batch_3_no_inverse.h5", 30, 400)

@@ -133,8 +133,8 @@ class MCTS:
                 # go deeper
                 value,r = child.simu(game)
                 # inverse value and r 
-                value = -1 * value
-                r = -1 * r
+                # value = -1 * value
+                # r = -1 * r
 
                 # backp
                 self.n += 1
@@ -214,7 +214,7 @@ def mcts_data_collect(model, thread_num, file, rounds=100, sim_step=300):
 
         game = Game()
         mcts = MCTS(prob=2, action=(0,0,0,0,False), 
-                    game=game, config=MctsConfig(), player=0,
+                    game=game, config=MctsConfig(), player=1,
                     deep_frecker=deep_frecker, data_record=data_record)
 
         for i in range(300):
