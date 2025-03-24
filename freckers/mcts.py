@@ -9,7 +9,7 @@ import os
 
 class MctsConfig:
     def __init__(self) -> None:
-        self.c = 2
+        self.c = 1
         self.t = 1
         self.finish = False
         self.visulze = False
@@ -59,7 +59,7 @@ class MCTS:
             debug_rec.append((puct, child.action, child.n, child.w, child.q, child.p))
         
         #-----------------------------------------------------
-        if self.config.visulze:
+        if self.config.visulze and self.game != None:
             print("\n\ndebug_rec Player:", self.player)
             game_temp.pprint(debug = True)
             for i in range(len(debug_rec)):
@@ -120,7 +120,7 @@ class MCTS:
             self.n += 1
             self.w += value[0]
             self.q = value[0] / self.n
-            return value[0],0 # return estimated value and, but no reward
+            return value[0] # return estimated value and, but no reward
 
         else:
             # selection
@@ -129,27 +129,31 @@ class MCTS:
             s,r,sn,end = game.step(self.player, *child.action)
 
             if end:
+                # update the child node!!!
+                child.n += 1
+                child.w += r
+                child.q = child.w / child.n
+
                 self.n += 1
                 self.w += r
                 self.q = self.w / self.n
-                return r,r # if end, return the reward instead of the estimated value
+                return r # if end, return the reward instead of the estimated value
             else:
                 # go deeper
-                value,r = child.simu(game)
-                # inverse value and r 
+                value = child.simu(game)
+                # inverse value and r (i am not sure)
                 # value = -1 * value
-                # r = -1 * r
 
                 # backp
                 self.n += 1
                 self.w += value
                 self.q = self.w / self.n
 
-            return value,r # if not end, return the estimated value and the child's reward
+            return value # if not end, return the estimated value and the child's reward
     
 
     def run_simu(self, rounds):
-        for _ in range(rounds):
+        for i in range(rounds):
             game = copy.deepcopy(self.game)
             self.simu(game)
 
@@ -214,7 +218,7 @@ class MCTS:
         return end
 
 
-def mcts_data_collect(model, thread_num, file, rounds=100, sim_step=300):
+def mcts_data_collect(model, thread_num, file, config, rounds=100, sim_step=300):
     deep_frecker = DeepFrecker()
     data_record = DataRecord(file=file)
 
@@ -222,11 +226,10 @@ def mcts_data_collect(model, thread_num, file, rounds=100, sim_step=300):
 
         game = Game()
         mcts = MCTS(prob=2, action=(0,0,0,0,False), 
-                    game=game, config=MctsConfig(), player=1,
+                    game=game, config=config, player=1,
                     deep_frecker=deep_frecker, data_record=data_record)
 
         for i in range(300):
-
             print("线程", thread_num, "第", j, "轮游戏 ", "第", i, "步 模拟进行中")
             if i > 30:
                 mcts.config.t = 0.2

@@ -74,8 +74,7 @@ class Conv3DStack(nn.Module):
         prob = self.relu4(self.prob_conv(x))
         prob = self.flatten(prob)
         prob = self.relu_fc(self.fc1(prob))
-        prob = self.fc2(prob)
-        prob_out = torch.tanh(prob)
+        prob_out = torch.sigmoid(self.fc2(prob))
 
         return img_out, prob_out
 
