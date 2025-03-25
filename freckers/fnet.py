@@ -42,29 +42,29 @@ class Conv3DStack(nn.Module):
     def __init__(self):
         super(Conv3DStack, self).__init__()
         # 公共特征提取部分
-        self.conv1 = nn.Conv2d(3, 256, kernel_size=3, padding=1)
+        self.conv1 = nn.Conv2d(3, 16, kernel_size=3, padding=1)
         self.relu1 = nn.ReLU()
-        self.residual_block1 = ResidualBlock(256, 256)
-        self.residual_block2 = ResidualBlock(256, 256)
+        self.residual_block1 = ResidualBlock(16, 16)
+        #self.residual_block2 = ResidualBlock(16, 16)
         
         # 图像输出头
-        self.img_head = nn.Conv2d(256, 65, kernel_size=3, padding=1)
+        self.img_head = nn.Conv2d(16, 65, kernel_size=3, padding=1)
         self.relu_img = nn.ReLU()
 
         # 数值概率输出头
-        self.prob_conv = nn.Conv2d(256, 5, kernel_size=3, padding=1)
+        self.prob_conv = nn.Conv2d(16, 5, kernel_size=3, padding=1)
         self.relu4 = nn.ReLU()
         self.flatten = nn.Flatten()
-        self.fc1 = nn.Linear(5 * 8 * 8, 64)
+        self.fc1 = nn.Linear(5 * 8 * 8, 16)
         self.relu_fc = nn.ReLU()
-        self.fc2 = nn.Linear(64, 1)
+        self.fc2 = nn.Linear(16, 1)
 
     def forward(self, x):
         raw = x
         # 公共特征处理
         x = self.relu1(self.conv1(x))
         x = self.residual_block1(x)
-        x = self.residual_block2(x)
+        #x = self.residual_block2(x)
 
         # 图像输出分支
         img_out = self.img_head(x)

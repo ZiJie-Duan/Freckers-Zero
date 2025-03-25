@@ -93,7 +93,6 @@ class MCTS:
 
         # add dirichlet noise when the game start the first step
         if self.game != None:
-            print("add dirichlet noise")
             self.add_dirichlet_noise()
 
     def simu(self, game):
@@ -198,11 +197,14 @@ class MCTS:
         self.meta_value = max_child.meta_value
 
         # add dirichlet noise when the tree change the node
-        print("add dirichlet noise")
         self.add_dirichlet_noise()
 
         if end:
-            self.data_record.update_value_and_save(r)
+            if r == 0:
+                print("drop the data")
+                self.data_record.drop()
+            else:
+                self.data_record.update_value_and_save(r)
 
         return end
 

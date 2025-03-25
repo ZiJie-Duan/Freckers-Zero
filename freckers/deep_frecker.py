@@ -103,6 +103,13 @@ class DataRecord:
         self.save()
 
 
+    def drop(self):
+        # 清空缓存
+        self.memo_gameboard = np.empty((0, 3, 8, 8), dtype=np.int32)
+        self.memo_action_prob = np.empty((0, 65, 8, 8), dtype=np.int32)
+        self.memo_value = np.empty((0,), dtype=np.int32)
+
+
     def save(self, file=None):
         if file == None:
             file = self.file
