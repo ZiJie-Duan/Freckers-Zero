@@ -58,7 +58,7 @@ class DataRecord:
         self.write_first = True
 
         # 初始化三个独立数组容器
-        self.memo_gameboard = np.empty((0, 3, 8, 8), dtype=np.float32)
+        self.memo_gameboard = np.empty((0, 16, 8, 8), dtype=np.float32)
         self.memo_action_prob = np.empty((0, 65, 8, 8), dtype=np.float32)
         self.memo_value = np.empty((0,), dtype=np.float32)
         
@@ -76,13 +76,8 @@ class DataRecord:
         for i in range(len(action_prob)):
             action_prob_m[action_prob[i][2]*8 + action_prob[i][3],
                           action_prob[i][0], 
-                          action_prob[i][1]] \
+                          action_prob[i][1]]\
                         = action_prob[i][4]
-
-        if player != 0:
-            gameboard = np.rot90(gameboard, 2) # rotate 180 degrees
-            gameboard[[0, 1]] = gameboard[[1, 0]] # swap red and blue
-            action_prob_m = np.rot90(action_prob_m, 2)
 
         gameboard = np.array([gameboard], dtype=np.float32)
         action_prob_m = np.array([action_prob_m], dtype=np.float32)
@@ -105,7 +100,7 @@ class DataRecord:
 
     def drop(self):
         # 清空缓存
-        self.memo_gameboard = np.empty((0, 3, 8, 8), dtype=np.int32)
+        self.memo_gameboard = np.empty((0, 16, 8, 8), dtype=np.int32)
         self.memo_action_prob = np.empty((0, 65, 8, 8), dtype=np.int32)
         self.memo_value = np.empty((0,), dtype=np.int32)
 
@@ -120,7 +115,7 @@ class DataRecord:
                 f.create_dataset(
                     'gameboard',
                     data=self.memo_gameboard,
-                    maxshape=(None, 3, 8, 8),
+                    maxshape=(None, 16, 8, 8),
                     chunks=True
                 )
                 f.create_dataset(
@@ -151,7 +146,7 @@ class DataRecord:
                     dataset[old_size:] = data
         
         # 清空缓存
-        self.memo_gameboard = np.empty((0, 3, 8, 8), dtype=np.int32)
+        self.memo_gameboard = np.empty((0, 16, 8, 8), dtype=np.int32)
         self.memo_action_prob = np.empty((0, 65, 8, 8), dtype=np.int32)
         self.memo_value = np.empty((0,), dtype=np.int32)
 
@@ -169,14 +164,7 @@ class DeepFrecker:
         else:
             model = self.model
 
-        # 待验证
-        if player == 0:
-            input_data = gameboard
-        else:
-            input_data = np.rot90(gameboard, 2) # rotate 180 degrees
-            input_data[[0, 1]] = input_data[[1, 0]] # swap red and blue
-
-        action_prob, value = self.inference(input_data, model)
+        action_prob, value = self.inference(gameboard, model)
 
         if player == 0:
             return action_prob[0], value[0]

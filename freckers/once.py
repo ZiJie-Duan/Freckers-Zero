@@ -26,6 +26,6 @@ class MctsConfig:
         self.dirichlet_epsilon = 0.25
 
 
-model = torch.load(r"C:\Users\lucyc\Desktop\freckers_data\ITER_v1.pth", weights_only=False)
+#model = torch.load(r"C:\Users\lucyc\Desktop\freckers_data\ITER_v2.pth", weights_only=False)
 model = Conv3DStack()
-mcts_data_collect(model, "N", r"C:\Users\lucyc\Desktop\freckers_data\ITER_v2.h5", MctsConfig(), 1000, 200)
+mcts_data_collect(model, "N", r"C:\Users\lucyc\Desktop\freckers_data\P1.h5", MctsConfig(), 1000, 100)

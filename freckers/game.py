@@ -4,6 +4,7 @@ from scipy.signal import convolve2d
 class Game:
 
     def __init__(self, rounds_limit = 250):
+        self.gameboard_memory = [np.zeros((3,8,8),np.int8) for _ in range(4)]
         self.gamebaord = np.zeros((3,8,8),np.int8) # [red, blue, leaf]
         self.gamebaord[0][0] = np.array([0,1,1,1,1,1,1,0]) # red
         self.gamebaord[1][7] = np.array([0,1,1,1,1,1,1,0]) # blue
@@ -18,6 +19,8 @@ class Game:
         self.bottom_row = 7
         self.rounds = 0
         self.rounds_limit = rounds_limit
+
+        self.gameboard_memory.append(self.gamebaord.copy())
 
     def win_check(self):
         if np.sum(self.gamebaord[self.red][self.bottom_row]) == 6:
@@ -52,8 +55,6 @@ class Game:
         """
         self.rounds += 1
 
-        s = self.gamebaord.copy()
-
         if grow:
             self.grow(player)
         else:   
@@ -65,15 +66,34 @@ class Game:
         reward = 0 if winner == None else 1 if winner == player else -1
         done = False if (self.rounds < self.rounds_limit) and (winner == None) else True
 
+        musk = np.ones((1, 8, 8), dtype=np.int8)
+        if player == 0:
+            musk = np.zeros((1, 8, 8), dtype=np.int8)
+
+        s = np.concatenate(self.gameboard_memory + [musk.copy()], axis=0)
+    
+        self.gameboard_memory.pop(0)
+        self.gameboard_memory.append(self.gamebaord.copy())
+
+        sn = np.concatenate(self.gameboard_memory + [musk.copy()], axis=0)
+
         return (
             s,
             reward,
-            self.gamebaord.copy(),
+            sn,
             done
         )
 
+    def get_gameboard_matrix(self, player):
+        musk = np.ones((1, 8, 8), dtype=np.int8)
+        if player == 0:
+            musk = np.zeros((1, 8, 8), dtype=np.int8)
+            
+        return np.concatenate(self.gameboard_memory + [musk.copy()], axis=0)
+
     def get_gameboard(self):
         return self.gamebaord.copy()
+
 
     def pprint(self, debug = False):
         if not debug:

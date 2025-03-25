@@ -99,7 +99,8 @@ class MCTS:
 
         if self.n == 0:
             # eval
-            action_prob, value = self.deep_frecker.run(game.get_gameboard(), self.player)
+            action_prob, value = self.deep_frecker.run(
+                game.get_gameboard_matrix(self.player), self.player)
             rstk = RSTK(game.get_gameboard())
             # expand
             self.expand(action_prob, rstk)
@@ -175,7 +176,7 @@ class MCTS:
             pi[i] = tuple(pi[i])
 
         # record the data
-        self.data_record.add(self.game.get_gameboard(), pi, 0, self.player)
+        self.data_record.add(self.game.get_gameboard_matrix(self.player), pi, 0, self.player)
         # here we pass a temp value 0, because we want to update the value later
         # the value depends on the end of the game
 
