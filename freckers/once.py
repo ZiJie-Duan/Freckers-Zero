@@ -28,4 +28,4 @@ class MctsConfig:
 
 #model = torch.load(r"C:\Users\lucyc\Desktop\freckers_data\ITER_v2.pth", weights_only=False)
 model = Conv3DStack()
-mcts_data_collect(model, "N", r"C:\Users\lucyc\Desktop\freckers_data\P1.h5", MctsConfig(), 1000, 100)
+mcts_data_collect(model, "N", r"C:\Users\lucyc\Desktop\freckers_data\P1.h5", MctsConfig(), 1000, 150)

@@ -153,23 +153,20 @@ class DataRecord:
 
 
 class DeepFrecker:
-    def __init__(self, model, model2=None):
+    def __init__(self, model, model2):
         self.model = model
         self.model2 = model2
 
     def run(self, gameboard, player):
         model = None
-        if self.model2 != None and player == 1:
+        if player == 1:
             model = self.model2
         else:
             model = self.model
 
         action_prob, value = self.inference(gameboard, model)
 
-        if player == 0:
-            return action_prob[0], value[0]
-        else:
-            return np.rot90(action_prob, 2)[0], value[0]
+        return action_prob[0], value[0]
 
     
     def inference(self, input_data, model):
