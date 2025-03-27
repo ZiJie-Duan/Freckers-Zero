@@ -12,11 +12,23 @@ class MctsConfig:
 
         self.search_step = 200
 
+
+class TrainingConfig:
+    def __init__(self):
+        self.batch_size = 32
+        self.shuffle = True
+        self.num_workers = 2
+        self.epochs = 3
+        self.learning_rate = 0.001
+
+
+
 class FreckersConfig:
     
     def __init__(self) -> None:
         # iter setting
-        self.iter_number = 20
+        self.iter_rounds = 20
+        self.iter_now = 0
 
         # simulation setting
         self.simulation_round = 150
@@ -27,11 +39,20 @@ class FreckersConfig:
         self.init_player = 0
 
         # model / dataset setting
-        self.model_dir = ""
-        self.dataset_dir = ""
+        self.model_base_dir = ""
+        self.dataset_base_dir = ""
 
         # game setting
-        self.rounds_limit = 250
+        self.game_rounds_limit = 250
+
+        # training setting
+        self.training_dataset_cross = 3
+        self.training_dataset_select_rate = 0.3
+        self.training_dataset_eval_rate = 0.8
+        self.train_config = TrainingConfig()
+
+
+
 
         
 

@@ -210,7 +210,7 @@ class MCTSAgent:
             deepfrecker1= self.deepfrecker1,
             player= first_player
         )
-        self.rounds = rounds
+        self.rounds = mcts_config.search_step
         
     def simulate(self, game):    
         for i in range(self.rounds):

@@ -1,85 +1,114 @@
 from global_config import MctsConfig, FreckersConfig
-
+from deep_frecker import DeepFrecker
+from data_record import DataRecord
+from mcts_agent import MCTSAgent
+from game import Game
+from simulator import Simulator
+from model import FreckersNet, FreckerDataSet
+from trainer import Trainer
+import torch
+from torch.utils.data import DataLoader, random_split
 
 class IterManager:
 
     def __init__(self) -> None:
+        self.cfg = FreckersConfig()
+        self.simulator = None
+        self.trainer = None
 
-        self.mc_cfg = MctsConfig()
-        self.fk_cfg = FreckersConfig()
+    def simulation_init(self):
+        # load the model
+        model = None
+        if self.cfg.iter_now == 0:
+            model = FreckersNet()
+        else:
+            model = torch.load(
+                self.cfg.model_base_dir 
+                + str(self.cfg.iter_now) + ".pth")
+        
+        deepfrecker = DeepFrecker(model=model)
+        datarecorder = DataRecord(
+            file=self.cfg.dataset_base_dir 
+            + str(self.cfg.iter_now + 1) + ".h5")
+        
+        mcts_agent = MCTSAgent(
+            deepfrecker0=deepfrecker,
+            deepfrecker1=deepfrecker,
+            mcts_config= self.cfg.mcts_config,
+            first_player=0
+        )
 
+        game = Game(self.cfg.game_rounds_limit)
+
+        self.simulator = Simulator(
+            game=game, mcts_agent=mcts_agent, dataRecorder=datarecorder
+        )
+
+
+    def load_dataset(self):
+        now = self.cfg.iter_now
+        datafiles = []
+        for i in range(
+            max(0, now - self.cfg.training_dataset_cross),
+            now + 1):
+
+            datafiles.append(
+                self.cfg.dataset_base_dir + i + ".h5"
+            )
+        
+        datasets = [FreckerDataSet(x) for x in datafiles]
+        dataset = torch.utils.data.ConcatDataset(datasets)
+        
+        # 按照顺序分割数据集
+        train_size = int(
+            self.cfg.training_dataset_eval_rate * len(dataset))
+
+        # 使用 Subset 分割数据集
+        train_dataset = torch.utils.data.Subset(dataset, range(train_size))
+        val_dataset = torch.utils.data.Subset(dataset, range(train_size, len(datasets)))
+
+        select_rate = self.cfg.training_dataset_select_rate
+        train_dataset, _ = random_split(train_dataset, 
+            [int(select_rate * len(train_dataset)), len(train_dataset) - int(select_rate * len(train_dataset))])
+        val_dataset, _ = random_split(val_dataset, 
+            [int(select_rate * len(val_dataset)), len(val_dataset) - int(select_rate * len(val_dataset))])
+                    
+        return train_dataset, val_dataset
+
+
+    def training_init(self):
+        model = None
+        if self.cfg.iter_now == 0:
+            model = FreckersNet()
+        else:
+            model = torch.load(
+                self.cfg.model_base_dir 
+                + str(self.cfg.iter_now) + ".pth")
+            
+        train_dataset, val_dataset = self.load_dataset()
+
+        self.trainer = Trainer(
+            model=model,
+            train_dataset=train_dataset,
+            val_dataset=val_dataset,
+            modelPath=\
+                self.cfg.model_base_dir\
+                + str(self.cfg.iter_now + 1) + ".pth")
+        
         # 500k <- 25k
     def start(self):
         for i in range(self.fk_cfg.iter_number):
             print(f"[IterManager]: Iter {i+1} Start.")
+            self.simulation_init()
+            print("[IterManager]: iSimulation Init Finish")
 
+            self.simulator.run(self.cfg.simulation_round)
 
+            print("[IterManager]: Simulation Finish")
 
-        
+            self.training_init()
+            
+            print("[IterManager]: Training Init Finish")
 
-
-
-
-
-
-def mcts_data_collect(model, thread_num, file, config, rounds=100, sim_step=300, model2=None):
-    deep_frecker = DeepFrecker(model, model2)
-    data_record = DataRecord(file=file)
-
-    for j in range(rounds):
-
-        game = Game()
-        mcts = MCTS(prob=2, action=(0,0,0,0,False), 
-                    game=game, config=config, player=1,
-                    deep_frecker=deep_frecker, data_record=data_record)
-
-        for i in range(300):
-            print("线程", thread_num, "第", j, "轮游戏 ", "第", i, "步 模拟进行中")
-            if i > 30:
-                mcts.config.t = 0.2
-            elif i > 60:
-                mcts.config.t = 0.01
-            else:
-                mcts.config.t = 1
-            # if i > 100:
-            #     mcts.config.visulze = True
-            # else:
-            #     mcts.config.visulze = False
-            mcts.run_simu(sim_step)
-            end, _ = mcts.move()
-            if end:
-                break
-
-
-def mcts_competition(model, thread_num, file, config, rounds=100, sim_step=300, model2=None):
-    deep_frecker = DeepFrecker(model, model2)
-    data_record = DataRecord(file=file)
-    winner_record = []
-
-    for j in range(rounds):
-
-        game = Game()
-        mcts = MCTS(prob=2, action=(0,0,0,0,False), 
-                    game=game, config=config, player=1,
-                    deep_frecker=deep_frecker, data_record=data_record)
-
-        for i in range(300):
-            print("线程", thread_num, "第", j, "轮游戏 ", "第", i, "步 模拟进行中")
-            if i > 30:
-                mcts.config.t = 0.2
-            elif i > 60:
-                mcts.config.t = 0.01
-            else:
-                mcts.config.t = 1
-            # if i > 100:
-            #     mcts.config.visulze = True
-            # else:
-            #     mcts.config.visulze = False
-            mcts.run_simu(sim_step)
-            end, winner = mcts.move()
-            if end:
-                winner_record.append(winner)
-                break
-    
-    return winner_record
-
+            self.trainer.train()
+            print("[IterManager]: Training Finish")
