@@ -1,4 +1,6 @@
 import torch
+from torch.utils.data import Dataset
+import h5py
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
@@ -38,9 +40,9 @@ class ResidualBlock(nn.Module):
         return out
 
 
-class Conv3DStack(nn.Module):
+class FreckersNet(nn.Module):
     def __init__(self):
-        super(Conv3DStack, self).__init__()
+        super(FreckersNet, self).__init__()
         # 公共特征提取部分 
         self.conv1 = nn.Conv2d(16, 16, kernel_size=3, padding=1)
         self.relu1 = nn.ReLU()
@@ -89,34 +91,45 @@ class MaskLoss(nn.Module):
         return loss
 
 
-def train(model, train_loader, num_epochs=10):
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model.to(device)
-    
-    optimizer = optim.Adam(model.parameters(), lr=0.0001)
-    mask_loss = MaskLoss()
 
-    for epoch in range(num_epochs):
-        model.train()
-        running_loss = 0.0
-        for gameboard, action_prob, value in train_loader:
-            gameboard = gameboard.to(device)
-            action_prob = action_prob.to(device)
-            value = value.to(device)
+class FreckerDataSet(Dataset):
+    def __init__(self, file_path):
+        """
+        初始化H5Dataset对象。
 
-            optimizer.zero_grad()
-            p_action_prob, p_value = model(gameboard)
-            # 计算双损失
-            loss_img = mask_loss(p_action_prob, action_prob)
-            loss_prob = F.mse_loss(p_value.view(-1), value)
-            total_loss = loss_img + loss_prob
-            
-            total_loss.backward()
-            optimizer.step()
-            running_loss += total_loss.item()
+        参数:
+        - file_path: HDF5文件的路径
+        - dataset_name: HDF5文件中数据集的名称
+        """
+        self.file_path = file_path
+        self.gameboard = None
+        self.action_prob = None
+        self.value = None
 
-        print(f"Epoch {epoch+1}, Total Loss: {running_loss/len(train_loader):.8f}")
+        with h5py.File(self.file_path, 'r') as file:
+            self.gameboard = file['gameboard'][:]  # 将数据加载到内存中
+            self.action_prob = file['action_prob'][:]  # 将数据加载到内存中
+            self.value = file['value'][:]  # 将数据加载到内存中
+
+    def __len__(self):
+        """
+        返回数据集的长度。
+        """
+        return len(self.gameboard)
 
 
+    def __getitem__(self, idx):
+        """
+        根据索引返回数据集中的一个样本。
 
+        参数:
+        - idx: 样本的索引
+
+        返回:
+        - 样本数据
+        """
+        gameboard = torch.tensor(self.gameboard[idx], dtype=torch.float32)
+        action_prob = torch.tensor(self.action_prob[idx], dtype=torch.float32)
+        value = torch.tensor(self.value[idx], dtype=torch.float32)
+        return gameboard, action_prob, value
 

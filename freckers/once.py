@@ -4,7 +4,7 @@ import torch
 import torch.optim as optim
 import torch.nn.functional as F
 from fnet import MaskLoss, Conv3DStack
-from mcts import mcts_data_collect
+from freckers.mcts_agent import mcts_data_collect
 import win32api
 import win32process
 import win32con

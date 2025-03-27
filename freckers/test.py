@@ -2,7 +2,7 @@ import numpy as np
 from scipy.signal import convolve2d
 from game import Game
 from freckers_gym import RSTK
-from mcts import MCTS
+from freckers.mcts_agent import MCTS
 from fnet import Conv3DStack
 from deep_frecker import DeepFrecker
 from deep_frecker import DataRecord

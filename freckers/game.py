@@ -22,6 +22,9 @@ class Game:
 
         self.gameboard_memory.append(self.gamebaord.copy())
 
+    def init(self):
+        self.__init__(self, self.rounds_limit)
+
     def win_check(self):
         if np.sum(self.gamebaord[self.red][self.bottom_row]) == 6:
             return self.red
@@ -66,16 +69,21 @@ class Game:
         reward = 0 if winner == None else 1 if winner == player else -1
         done = False if (self.rounds < self.rounds_limit) and (winner == None) else True
 
-        musk = np.ones((1, 8, 8), dtype=np.int8)
+        musk_s = None
+        musk_sn = None
         if player == 0:
-            musk = np.zeros((1, 8, 8), dtype=np.int8)
+            musk_s = np.zeros([1,8,8])
+            musk_sn = np.ones([1,8,8])
+        else: 
+            musk_sn = np.zeros([1,8,8])
+            musk_s = np.ones([1,8,8])
 
-        s = np.concatenate(self.gameboard_memory + [musk.copy()], axis=0)
+        s = np.concatenate(self.gameboard_memory + [musk_s.copy()], axis=0)
     
         self.gameboard_memory.pop(0)
         self.gameboard_memory.append(self.gamebaord.copy())
 
-        sn = np.concatenate(self.gameboard_memory + [musk.copy()], axis=0)
+        sn = np.concatenate(self.gameboard_memory + [musk_sn.copy()], axis=0)
 
         return (
             s,

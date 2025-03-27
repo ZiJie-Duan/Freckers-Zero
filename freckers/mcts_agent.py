@@ -8,11 +8,11 @@ from game import Game
 import os
 
 class MCTS:
-    def __init__(self, prob, action, config, deep_frecker, 
-                 data_record=None, game=None, player=0) -> None:
-        self.deep_frecker = deep_frecker
-        self.data_record = data_record
-        self.game = game
+    def __init__(self, prob, action, config, 
+                 deepfrecker0, deepfrecker1, player=0) -> None:
+        
+        self.deepfrecker0 = deepfrecker0
+        self.deepfrecker1 = deepfrecker1
         self.player = player # 0/1
         self.config = config
         self.action = action # (r,c,nr,nc,grow)
@@ -141,14 +141,7 @@ class MCTS:
             return value # if not end, return the estimated value and the child's reward
     
 
-    def run_simu(self, rounds):
-        for i in range(rounds):
-            game = copy.deepcopy(self.game)
-            self.simu(game)
-
-
-    def move(self):
-
+    def getPi(self): 
         # Pi(a,s) = N(s,a)**(1/t) / Sum(N(s,b)**(1/t))
         # t_v = Sum(N(s,b)**(1/t))
         t_v = sum([c.n**(1/self.config.t) for c in self.children])
@@ -174,16 +167,19 @@ class MCTS:
         for i in range(len(pi)):
             pi[i].append(v_order_rec[i])
             pi[i] = tuple(pi[i])
+        
+        return pi
+    
 
-        # record the data
-        self.data_record.add(self.game.get_gameboard_matrix(self.player), pi, 0, self.player)
-        # here we pass a temp value 0, because we want to update the value later
-        # the value depends on the end of the game
+    def cutMove(self, pi):  
+        max_i = 0
+        max_v = -99999
+        for i, p in enumerate(pi):
+            if p[-1] > max_v:
+                max_v = p[-1]
+                max_i = i
 
-        # make the game move
-        s,r,sn,end = self.game.step(self.player,max_child.action[0],
-                       max_child.action[1],max_child.action[2],
-                       max_child.action[3],max_child.action[4])
+        max_child = self.children[max_i]
         
         # update the node
         self.game.pprint()
@@ -200,77 +196,43 @@ class MCTS:
         # add dirichlet noise when the tree change the node
         self.add_dirichlet_noise()
 
-        if end:
-            if r == 0:
-                print("drop the data")
-                self.data_record.drop()
-            else:
-                self.data_record.update_value_and_save(r)
 
-        winner = None
-        if r == 1:
-            winner = 0 if self.player == 1 else 1
-        return end, winner
-
-
-def mcts_data_collect(model, thread_num, file, config, rounds=100, sim_step=300, model2=None):
-    deep_frecker = DeepFrecker(model, model2)
-    data_record = DataRecord(file=file)
-
-    for j in range(rounds):
-
-        game = Game()
-        mcts = MCTS(prob=2, action=(0,0,0,0,False), 
-                    game=game, config=config, player=1,
-                    deep_frecker=deep_frecker, data_record=data_record)
-
-        for i in range(300):
-            print("线程", thread_num, "第", j, "轮游戏 ", "第", i, "步 模拟进行中")
-            if i > 30:
-                mcts.config.t = 0.2
-            elif i > 60:
-                mcts.config.t = 0.01
-            else:
-                mcts.config.t = 1
-            # if i > 100:
-            #     mcts.config.visulze = True
-            # else:
-            #     mcts.config.visulze = False
-            mcts.run_simu(sim_step)
-            end, _ = mcts.move()
-            if end:
-                break
-
-
-def mcts_competition(model, thread_num, file, config, rounds=100, sim_step=300, model2=None):
-    deep_frecker = DeepFrecker(model, model2)
-    data_record = DataRecord(file=file)
-    winner_record = []
-
-    for j in range(rounds):
-
-        game = Game()
-        mcts = MCTS(prob=2, action=(0,0,0,0,False), 
-                    game=game, config=config, player=1,
-                    deep_frecker=deep_frecker, data_record=data_record)
-
-        for i in range(300):
-            print("线程", thread_num, "第", j, "轮游戏 ", "第", i, "步 模拟进行中")
-            if i > 30:
-                mcts.config.t = 0.2
-            elif i > 60:
-                mcts.config.t = 0.01
-            else:
-                mcts.config.t = 1
-            # if i > 100:
-            #     mcts.config.visulze = True
-            # else:
-            #     mcts.config.visulze = False
-            mcts.run_simu(sim_step)
-            end, winner = mcts.move()
-            if end:
-                winner_record.append(winner)
-                break
+class MCTSAgent:
     
-    return winner_record
+    def __init__(self, deepfrecker0, deepfrecker1, mcts_config, first_player, rounds):
+        self.deepfrecker0 = deepfrecker0
+        self.deepfrecker1 = deepfrecker1
+        self.mcts = MCTS(
+            prob= 1,
+            action= (0,0,0,0,False),
+            config = mcts_config,
+            deepfrecker0= self.deepfrecker0,
+            deepfrecker1= self.deepfrecker1,
+            player= first_player
+        )
+        self.rounds = rounds
+        
+    def simulate(self, game):    
+        for i in range(self.rounds):
+            game_copy = copy.deepcopy(game)
+            self.simu(game_copy)
+
+    def getPi(self):
+        return self.mcts.getPi() 
+
+    def getAction(self,pi):
+        max_i = 0
+        max_v = -99999
+        for i, p in enumerate(pi):
+            if p[-1] > max_v:
+                max_v = p[-1]
+                max_i = i
+
+        return pi[max_i]
+    
+    def cutMove(self, pi):
+        self.mcts.cutMove(pi)
+
+    def getPlayer(self):
+        return self.mcts.player
 
