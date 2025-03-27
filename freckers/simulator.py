@@ -22,12 +22,12 @@ class Simulator:
             pi = self.mcts_agent.getPi()
             action = self.mcts_agent.getAction(pi)
             player = self.mcts_agent.getPlayer()
-            s,r,sn,end = self.game.step(player, *(action[:-1]))
-            self.mcts_agent.cutMove(pi)
 
             self.game.pprint()
-            print("move action: ", action)
+            print(f"player: {player}, action: {action}")
 
+            s,r,sn,end = self.game.step(player, *(action[:-1]))
+            self.mcts_agent.cutMove(pi) 
             self.dataRecorder.add(s,pi,0)
 
             if end:
@@ -37,5 +37,6 @@ class Simulator:
 
     def run(self, round):
         for i in range(round):
+            self.mcts_agent.reset()
             self.play()
     

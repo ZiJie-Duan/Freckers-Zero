@@ -21,6 +21,20 @@ class Game:
         self.rounds_limit = rounds_limit
 
         self.gameboard_memory.append(self.gamebaord.copy())
+    
+    def custom_reward(self, player):
+        gameboardmatrix = self.get_gameboard_matrix(player)
+        if player == 0:
+            if (np.array_equal(gameboardmatrix[12], gameboardmatrix[9]) and
+                np.array_equal(gameboardmatrix[9], gameboardmatrix[6])):
+                print("Red Bad")
+                return -20
+        elif player == 1:
+            if (np.array_equal(gameboardmatrix[13], gameboardmatrix[10]) and
+                np.array_equal(gameboardmatrix[10], gameboardmatrix[7])):
+                print("Blue Bad")
+                return -20
+        return 0
 
     def init(self):
         self.__init__(self.rounds_limit)
@@ -67,6 +81,7 @@ class Game:
         
         winner = self.win_check()
         reward = 0 if winner == None else 1 if winner == player else -1
+        reward += self.custom_reward(player)
         done = False if (self.rounds < self.rounds_limit) and (winner == None) else True
 
         musk_s = None

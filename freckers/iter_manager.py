@@ -24,7 +24,7 @@ class IterManager:
         else:
             model = torch.load(
                 self.cfg.model_base_dir 
-                + "\\" + str(self.cfg.iter_now) + ".pth")
+                + "\\" + str(self.cfg.iter_now) + ".pth", weights_only=False)
         
         deepfrecker = DeepFrecker(model=model)
         datarecorder = DataRecord(
@@ -35,7 +35,7 @@ class IterManager:
             deepfrecker0=deepfrecker,
             deepfrecker1=deepfrecker,
             mcts_config= self.cfg.mcts_config,
-            first_player=0
+            first_player=self.cfg.init_player
         )
 
         game = Game(self.cfg.game_rounds_limit)
@@ -61,6 +61,7 @@ class IterManager:
         
         datasets = [FreckerDataSet(x) for x in datafiles]
         dataset = torch.utils.data.ConcatDataset(datasets)
+        print(len(dataset))
 
         # 按照顺序分割数据集
         train_size = int(
@@ -87,7 +88,7 @@ class IterManager:
         else:
             model = torch.load(
                 self.cfg.model_base_dir 
-                + "\\" + str(self.cfg.iter_now) + ".pth")
+                + "\\" + str(self.cfg.iter_now) + ".pth", weights_only=False)
             
         train_dataset, val_dataset = self.load_dataset()
 
@@ -105,7 +106,8 @@ class IterManager:
             self.simulation_init()
             print("[IterManager]: iSimulation Init Finish")
 
-            self.simulator.run(self.cfg.simulation_round)
+            if self.cfg.iter_now != 0:
+                self.simulator.run(self.cfg.simulation_round)
 
             print("[IterManager]: Simulation Finish")
 
@@ -115,6 +117,8 @@ class IterManager:
 
             self.trainer.train(self.cfg.train_config)
             print("[IterManager]: Training Finish")
+
+            self.cfg.iter_now += 1
 
 
 

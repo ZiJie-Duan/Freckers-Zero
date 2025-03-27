@@ -34,15 +34,14 @@ class Trainer:
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model.to(device)
 
-        optimizer = optim.Adam(self.model.parameters(), lr=config.min_l_rate)
-        scheduler = OneCycleLR(
-            optimizer,
-            max_lr=config.max_l_rate,  # 最大学习率
-            steps_per_epoch=len(self.train_loader),
-            epochs=num_epochs,
-            pct_start=0.4  # warmup 的比例
-        )
-        mask_loss = MaskLoss()
+        optimizer = optim.Adam(self.model.parameters(), lr=config.max_l_rate)
+        # scheduler = OneCycleLR(
+        #     optimizer,
+        #     max_lr=config.max_l_rate,  # 最大学习率
+        #     steps_per_epoch=len(self.train_loader),
+        #     epochs=num_epochs,
+        #     pct_start=0.4  # warmup 的比例
+        # )
         mask_loss = MaskLoss()
 
         train_loss_record = []
@@ -65,7 +64,7 @@ class Trainer:
                 
                 total_loss.backward()
                 optimizer.step()
-                scheduler.step()
+                #scheduler.step()
                 train_loss += total_loss.item()
             
             train_loss /= len(self.train_loader)

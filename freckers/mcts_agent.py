@@ -46,12 +46,22 @@ class MCTS:
             debug_rec.append((puct, child.action, child.n, child.w, child.q, child.p))
         
         #-----------------------------------------------------
-        if self.config.visulze and self.game != None:
-            print("\n\ndebug_rec Player:", self.player)
-            game_temp.pprint(debug = True)
-            for i in range(len(debug_rec)):
-                print(debug_rec[i])
-            input("Press Enter to continue...")
+        # temp_gb = game_temp.get_gameboard_matrix(self.player)
+        # if (np.array_equal(temp_gb[0], temp_gb[3]) and
+        #     np.array_equal(temp_gb[0], temp_gb[6]) and
+        #     np.array_equal(temp_gb[0], temp_gb[9]) and
+        #     np.array_equal(temp_gb[0], temp_gb[12])):
+        if self.root:
+            temp_gb = game_temp.get_gameboard_matrix(self.player)
+            if (np.array_equal(temp_gb[0], temp_gb[3]) and
+                np.array_equal(temp_gb[0], temp_gb[6]) and
+                np.array_equal(temp_gb[0], temp_gb[9]) and
+                np.array_equal(temp_gb[0], temp_gb[12]) and self.player == 0):
+                    print("\n\ndebug_rec Player:", self.player)
+                    game_temp.pprint(debug = True)
+                    for i in range(len(debug_rec)):
+                        print(debug_rec[i])
+                    input("Press Enter to continue...")
         #-----------------------------------------------------
         
         return max_child
@@ -103,6 +113,7 @@ class MCTS:
             action_prob, value = deep_frecker.run(
                 game.get_gameboard_matrix(self.player))
             rstk = RSTK(game.get_gameboard())
+
             # expand
             self.expand(action_prob, rstk)
             # backp
@@ -203,6 +214,7 @@ class MCTSAgent:
         self.deepfrecker0 = deepfrecker0
         self.deepfrecker1 = deepfrecker1
         self.config = mcts_config
+        self.first_player = first_player
         self.mcts = MCTS(
             prob= 1,
             action= (0,0,0,0,False),
@@ -213,8 +225,19 @@ class MCTSAgent:
             root= True
         )
         self.rounds = mcts_config.search_step
+    
+    def reset(self):
+        self.mcts = MCTS(
+            prob= 1,
+            action= (0,0,0,0,False),
+            config = self.config,
+            deepfrecker0= self.deepfrecker0,
+            deepfrecker1= self.deepfrecker1,
+            player= self.first_player,
+            root= True
+        )
         
-    def simulate(self, game):    
+    def simulate(self, game):
         for i in range(self.rounds):
             game_copy = copy.deepcopy(game)
             self.mcts.simu(game_copy)
