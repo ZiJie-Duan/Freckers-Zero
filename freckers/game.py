@@ -23,7 +23,7 @@ class Game:
         self.gameboard_memory.append(self.gamebaord.copy())
 
     def init(self):
-        self.__init__(self, self.rounds_limit)
+        self.__init__(self.rounds_limit)
 
     def win_check(self):
         if np.sum(self.gamebaord[self.red][self.bottom_row]) == 6:

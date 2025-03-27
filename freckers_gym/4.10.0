@@ -1,4 +1,5 @@
 Collecting typing-extensions
-  Using cached typing_extensions-4.12.2-py3-none-any.whl (37 kB)
+  Downloading typing_extensions-4.13.0-py3-none-any.whl (45 kB)
+     ---------------------------------------- 45.7/45.7 kB ? eta 0:00:00
 Installing collected packages: typing-extensions
-Successfully installed typing-extensions-4.12.2
+Successfully installed typing-extensions-4.13.0

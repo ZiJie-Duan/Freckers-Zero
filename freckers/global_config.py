@@ -10,7 +10,7 @@ class MctsConfig:
         self.dirichlet_alpha = 0.03
         self.dirichlet_epsilon = 0.25 
 
-        self.search_step = 200
+        self.search_step = 50
 
 
 class TrainingConfig:
@@ -19,8 +19,8 @@ class TrainingConfig:
         self.shuffle = True
         self.num_workers = 2
         self.epochs = 3
-        self.learning_rate = 0.001
-
+        self.max_l_rate = 0.001
+        self.min_l_rate = 0.00001
 
 
 class FreckersConfig:
@@ -31,7 +31,7 @@ class FreckersConfig:
         self.iter_now = 0
 
         # simulation setting
-        self.simulation_round = 150
+        self.simulation_round = 1
         self.simulation_thred = 3
 
         # mcts setting
@@ -39,8 +39,8 @@ class FreckersConfig:
         self.init_player = 0
 
         # model / dataset setting
-        self.model_base_dir = ""
-        self.dataset_base_dir = ""
+        self.model_base_dir = r"C:\Users\lucyc\Desktop\models"
+        self.dataset_base_dir = r"C:\Users\lucyc\Desktop\data"
 
         # game setting
         self.game_rounds_limit = 250

@@ -1,13 +1,12 @@
 import torch
 import torch.optim as optim
 import torch.nn.functional as F
-from model import MaskLoss, Conv3DStack
-from deep_frecker import DeepFrecker, FreckerDataSet
-from torch.utils.data import DataLoader, random_split
+from model import MaskLoss
+from torch.utils.data import DataLoader
 import torch
 import torch.optim as optim
 import torch.nn.functional as F
-
+from torch.optim.lr_scheduler import OneCycleLR
 
 class Trainer:
 
@@ -28,12 +27,22 @@ class Trainer:
             persistent_workers=True)
 
     def train(self, config):
+        
+        self.get_dataloader(config)
 
         num_epochs = config.epochs
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model.to(device)
 
-        optimizer = optim.Adam(self.model.parameters(), lr=config.learning_rate)
+        optimizer = optim.Adam(self.model.parameters(), lr=config.min_l_rate)
+        scheduler = OneCycleLR(
+            optimizer,
+            max_lr=config.max_l_rate,  # 最大学习率
+            steps_per_epoch=len(self.train_loader),
+            epochs=num_epochs,
+            pct_start=0.4  # warmup 的比例
+        )
+        mask_loss = MaskLoss()
         mask_loss = MaskLoss()
 
         train_loss_record = []
@@ -56,6 +65,7 @@ class Trainer:
                 
                 total_loss.backward()
                 optimizer.step()
+                scheduler.step()
                 train_loss += total_loss.item()
             
             train_loss /= len(self.train_loader)

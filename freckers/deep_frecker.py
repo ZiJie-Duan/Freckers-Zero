@@ -32,3 +32,5 @@ class DeepFrecker:
             prob_output = prob_output.cpu().numpy()
             return img_output, prob_output
 
+    def loc_trans(row, col):
+        return (row*8 + col) 

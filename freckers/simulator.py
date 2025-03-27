@@ -1,4 +1,4 @@
-
+import copy
 class Simulator:
 
     def __init__(self, game, mcts_agent, dataRecorder) -> None:
@@ -18,19 +18,24 @@ class Simulator:
                 self.mcts_agent.config.t = 1
 
             i += 1
-            self.mcts_agent.simulate(self.game.copy())
+            self.mcts_agent.simulate(copy.deepcopy(self.game))
             pi = self.mcts_agent.getPi()
             action = self.mcts_agent.getAction(pi)
             player = self.mcts_agent.getPlayer()
-            s,r,sn,end = self.game.step(player, *action)
+            s,r,sn,end = self.game.step(player, *(action[:-1]))
+            self.mcts_agent.cutMove(pi)
+
+            self.game.pprint()
+            print("move action: ", action)
 
             self.dataRecorder.add(s,pi,0)
 
             if end:
+                print("end")
                 self.dataRecorder.update_value_and_save(r)
                 break
 
     def run(self, round):
         for i in range(round):
-            self.paly()
+            self.play()
     

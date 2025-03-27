@@ -1,15 +1,12 @@
 from math import sqrt
 from freckers_gym import RSTK
 from deep_frecker import DeepFrecker
-from deep_frecker import DataRecord
 import numpy as np
 import copy
-from game import Game
-import os
 
 class MCTS:
     def __init__(self, prob, action, config, 
-                 deepfrecker0, deepfrecker1, player=0) -> None:
+                 deepfrecker0, deepfrecker1, player=0, root=False) -> None:
         
         self.deepfrecker0 = deepfrecker0
         self.deepfrecker1 = deepfrecker1
@@ -23,6 +20,7 @@ class MCTS:
 
         self.children = [] 
         self.meta_value = 0
+        self.root = root
 
     def select(self, game_temp):
         max = -999
@@ -77,7 +75,8 @@ class MCTS:
                         action = (base_loc[0], base_loc[1], action[0], action[1], False),
                         config = self.config,
                         player = 0 if self.player == 1 else 1,
-                        deep_frecker=self.deep_frecker
+                        deepfrecker0= self.deepfrecker0,
+                        deepfrecker1= self.deepfrecker1
                         )
                 )
 
@@ -87,20 +86,22 @@ class MCTS:
                 action = (0, 0, 0, 0, True), # grow
                 config = self.config,
                 player = 0 if self.player == 1 else 1,
-                deep_frecker=self.deep_frecker
+                deepfrecker0= self.deepfrecker0,
+                deepfrecker1= self.deepfrecker1
                 )
         )
 
         # add dirichlet noise when the game start the first step
-        if self.game != None:
+        if self.root:
             self.add_dirichlet_noise()
 
     def simu(self, game):
+        deep_frecker = self.deepfrecker0 if self.player == 0 else self.deepfrecker1
 
         if self.n == 0:
             # eval
-            action_prob, value = self.deep_frecker.run(
-                game.get_gameboard_matrix(self.player), self.player)
+            action_prob, value = deep_frecker.run(
+                game.get_gameboard_matrix(self.player))
             rstk = RSTK(game.get_gameboard())
             # expand
             self.expand(action_prob, rstk)
@@ -182,8 +183,6 @@ class MCTS:
         max_child = self.children[max_i]
         
         # update the node
-        self.game.pprint()
-        print("move action: ", max_child.action)
         self.player = max_child.player
         self.n = max_child.n # add 1 when backp
         self.w = max_child.w # add v when backp
@@ -192,6 +191,7 @@ class MCTS:
         self.action = max_child.action
         self.children = max_child.children 
         self.meta_value = max_child.meta_value
+        self.root = True
 
         # add dirichlet noise when the tree change the node
         self.add_dirichlet_noise()
@@ -199,23 +199,25 @@ class MCTS:
 
 class MCTSAgent:
     
-    def __init__(self, deepfrecker0, deepfrecker1, mcts_config, first_player, rounds):
+    def __init__(self, deepfrecker0, deepfrecker1, mcts_config, first_player):
         self.deepfrecker0 = deepfrecker0
         self.deepfrecker1 = deepfrecker1
+        self.config = mcts_config
         self.mcts = MCTS(
             prob= 1,
             action= (0,0,0,0,False),
             config = mcts_config,
             deepfrecker0= self.deepfrecker0,
             deepfrecker1= self.deepfrecker1,
-            player= first_player
+            player= first_player,
+            root= True
         )
         self.rounds = mcts_config.search_step
         
     def simulate(self, game):    
         for i in range(self.rounds):
             game_copy = copy.deepcopy(game)
-            self.simu(game_copy)
+            self.mcts.simu(game_copy)
 
     def getPi(self):
         return self.mcts.getPi() 

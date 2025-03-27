@@ -4,6 +4,7 @@ import h5py
 
 class DataRecord:
     def __init__(self, file):
+        print("file: ", file)
         self.file = file
         self.count = 0
         self.write_first = True
