@@ -30,6 +30,8 @@ class DataRecord:
                           action_prob[i][0], 
                           action_prob[i][1]]\
                         = action_prob[i][4]
+            
+        # add the grow probability
 
         gameboard = np.array([gameboard], dtype=np.float32)
         action_prob_m = np.array([action_prob_m], dtype=np.float32)

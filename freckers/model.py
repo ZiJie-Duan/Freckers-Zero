@@ -51,7 +51,6 @@ class FreckersNet(nn.Module):
         
         # 图像输出头
         self.img_head = nn.Conv2d(32, 65, kernel_size=3, padding=1)
-        self.relu_img = nn.ReLU()
 
         # 数值概率输出头
         self.prob_conv = nn.Conv2d(32, 5, kernel_size=3, padding=1)
@@ -68,9 +67,8 @@ class FreckersNet(nn.Module):
         x = self.residual_block1(x)
         #x = self.residual_block2(x)
 
-        # 图像输出分支
+        # 图像输出分支  
         img_out = self.img_head(x)
-        img_out = self.relu_img(img_out)
 
         # 数值概率分支
         prob = self.relu4(self.prob_conv(x))

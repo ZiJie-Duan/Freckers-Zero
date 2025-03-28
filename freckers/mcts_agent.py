@@ -81,7 +81,6 @@ class MCTS:
 
 
     def expand(self, action_prob, rstk, game):
-
         for actions in rstk.get_action_space(self.player):
             base_loc = actions[0] # the location of the chess
             for action in actions[1:]: # loop to get the location where the chess will be placed
@@ -111,7 +110,8 @@ class MCTS:
         if not skip_grow:
             self.children.append(
                 MCTS(
-                    prob = action_prob[5][5][5], # fix the location of grow probability
+                    # why it is 555, not 64?
+                    prob = action_prob[64][5][5], # fix the location of grow probability
                     action = (0, 0, 0, 0, True), # grow
                     config = self.config,
                     player = 0 if self.player == 1 else 1,
@@ -160,8 +160,9 @@ class MCTS:
             else:
                 # go deeper
                 value = child.simu(game)
-                # inverse value and r (i am not sure)
-                # value = -1 * value
+
+                # inverse value and r
+                value = (1 - value)
 
                 # backp
                 self.n += 1
