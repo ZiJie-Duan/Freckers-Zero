@@ -2,7 +2,6 @@ from iter_manager import IterManager
 
 class MctsConfig:
     def __init__(self) -> None:
-        self.c = 1.5
         self.t = 1
         self.finish = False
         self.visulze = False
@@ -10,6 +9,9 @@ class MctsConfig:
 
         self.dirichlet_alpha = 0.1
         self.dirichlet_epsilon = 0.25
+
+        self.pb_c_base = 300
+        self.pb_c_init = 1.25
 
         self.search_step = 150
 

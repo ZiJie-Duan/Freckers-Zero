@@ -84,10 +84,23 @@ class MaskLoss(nn.Module):
         super(MaskLoss, self).__init__()
 
     def forward(self, predictions, targets):
-        musk = targets != 0.0
-        loss = F.mse_loss(predictions[musk], targets[musk])
-        return loss
-
+        # 创建mask：检查每个像素的所有通道是否包含非零值
+        mask = targets.sum(dim=1, keepdim=True) > 0  # (B, 1, 8, 8)
+        
+        # 对预测结果进行log_softmax处理（沿通道维度）
+        log_softmax_pred = F.log_softmax(predictions, dim=1)
+        
+        # 计算交叉熵损失（元素级）
+        cross_entropy = - (targets * log_softmax_pred).sum(dim=1)  # (B, 8, 8)
+        
+        # 应用mask筛选需要计算的像素
+        valid_loss = cross_entropy[mask.squeeze(1)]  # 只保留被点亮的像素
+        
+        # 处理无有效像素的情况
+        if valid_loss.numel() == 0:
+            return torch.tensor(0.0, device=predictions.device)
+        
+        return valid_loss.mean()
 
 
 class FreckerDataSet(Dataset):

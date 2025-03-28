@@ -3,6 +3,7 @@ from freckers_gym import RSTK
 from deep_frecker import DeepFrecker
 import numpy as np
 import copy
+import math
 
 class MCTS:
     def __init__(self, prob, action, config, 
@@ -33,11 +34,14 @@ class MCTS:
         all_num = sqrt(self.n)
 
         debug_rec = []
+        
+        pb_c = math.log((self.n + self.config.pb_c_base + 1) /
+            self.config.pb_c_base) + self.config.pb_c_init
 
         for child in self.children:
 
             # puct = Q(s,a) + U(s,a)
-            u = self.config.c * child.p * (all_num) / (1 + child.n)
+            u = pb_c * child.p * (all_num) / (1 + child.n)
             puct = child.q + u
             if max < puct:
                 max = puct
@@ -81,21 +85,23 @@ class MCTS:
 
 
     def expand(self, action_prob, rstk, game):
+
+        actions_list = []
+        prob_list = []
+        
+        # check if the last two action is grow
         for actions in rstk.get_action_space(self.player):
             base_loc = actions[0] # the location of the chess
-            for action in actions[1:]: # loop to get the location where the chess will be placed
-                self.children.append(
-                    MCTS(
-                        prob = action_prob[DeepFrecker.loc_trans(action[0], action[1])][base_loc[0]][base_loc[1]],
-                        action = (base_loc[0], base_loc[1], action[0], action[1], False),
-                        config = self.config,
-                        player = 0 if self.player == 1 else 1,
-                        deepfrecker0= self.deepfrecker0,
-                        deepfrecker1= self.deepfrecker1
-                        )
-                )
+            for target_loc in actions[1:]: # loop to get the location where the chess will be placed
+                
+                # get the probability of the action matrix
+                prob = action_prob[DeepFrecker.loc_trans(target_loc[0], target_loc[1])][base_loc[0]][base_loc[1]],
+                action = (base_loc[0], base_loc[1], target_loc[0], target_loc[1], False),
+                
+                actions_list.append(action)
+                prob_list.append(prob)
 
-        # check if the last two action is grow
+        # special case: skip grow action
         gamematrix = game.get_gameboard_matrix(self.player)
         skip_grow = False
         if self.player == 0:
@@ -108,19 +114,30 @@ class MCTS:
                 skip_grow = True
 
         if not skip_grow:
+            actions_list.append((0,0,0,0, True))
+            prob_list.append(action_prob[64][0][0]) 
+            # the last layer store the probability of grow
+        else:
+            actions_list.append((0, 0, 0, 0, True))
+            prob_list.append(0) 
+
+        prob_list = np.exp(prob_list) / np.sum(np.exp(prob_list))
+
+        for i in range(len(actions_list)):
             self.children.append(
                 MCTS(
-                    # why it is 555, not 64?
-                    prob = action_prob[64][5][5], # fix the location of grow probability
-                    action = (0, 0, 0, 0, True), # grow
+                    prob = prob_list[i],
+                    action = actions_list[i],
                     config = self.config,
                     player = 0 if self.player == 1 else 1,
                     deepfrecker0= self.deepfrecker0,
                     deepfrecker1= self.deepfrecker1
                 )
-        )
+            )
+            
         if self.root:
             self.add_dirichlet_noise()
+
 
     def simu(self, game):
         self.temp_counter = 1 if not hasattr(self, 'temp_counter') else self.temp_counter + 1
@@ -135,7 +152,7 @@ class MCTS:
             # expand
             self.expand(action_prob, rstk, game)
             # backp
-            self.meta_value = value[0] # value has two value, first is win, second is lose
+            self.meta_value = value[0]             
             self.n += 1
             self.w += value[0]
             self.q = value[0] / self.n
@@ -152,11 +169,13 @@ class MCTS:
                 child.n += 1
                 child.w += r
                 child.q = child.w / child.n
-
+                
+                # if child finish the game
+                # update the parent node via inverse value
                 self.n += 1
-                self.w += r
+                self.w += (1 - r)
                 self.q = self.w / self.n
-                return r # if end, return the reward instead of the estimated value
+                return (1 - r) # if end, return the reward instead of the estimated value
             else:
                 # go deeper
                 value = child.simu(game)
@@ -199,6 +218,7 @@ class MCTS:
             pi[i].append(v_order_rec[i])
             pi[i] = tuple(pi[i])
         
+        print(pi)
         return pi
     
 

@@ -25,13 +25,14 @@ class DataRecord:
         value: 1
         """
         action_prob_m = np.zeros((65, 8, 8), dtype=np.float32)
-        for i in range(len(action_prob)):
+        for i in range(len(action_prob) - 1): # the last one is the grow probability
             action_prob_m[action_prob[i][2]*8 + action_prob[i][3],
                           action_prob[i][0], 
                           action_prob[i][1]]\
                         = action_prob[i][4]
             
         # add the grow probability
+        action_prob_m[64, 0, 0] = action_prob[-1][4]
 
         gameboard = np.array([gameboard], dtype=np.float32)
         action_prob_m = np.array([action_prob_m], dtype=np.float32)
