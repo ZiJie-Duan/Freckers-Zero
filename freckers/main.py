@@ -1,3 +1,4 @@
+from iter_manager import IterManager
 
 class MctsConfig:
     def __init__(self) -> None:
@@ -10,7 +11,7 @@ class MctsConfig:
         self.dirichlet_alpha = 0.1
         self.dirichlet_epsilon = 0.25
 
-        self.search_step = 200
+        self.search_step = 150
 
 
 class TrainingConfig:
@@ -18,7 +19,7 @@ class TrainingConfig:
         self.batch_size = 32
         self.shuffle = True
         self.num_workers = 1
-        self.epochs = 1
+        self.epochs = 2
         self.max_l_rate = 0.0001
         self.min_l_rate = 0.00001
 
@@ -27,17 +28,17 @@ class FreckersConfig:
     
     def __init__(self) -> None:
         # iter setting
-        self.iter_rounds = 20
-        self.iter_now = 10
-        
+        self.iter_rounds = 100
+        self.iter_now = 0
+        self.skip_first_simu = False
 
         # simulation setting
-        self.simulation_round = 5
+        self.simulation_round = 10
         self.simulation_thred = 3
 
         # mcts setting
         self.mcts_config = MctsConfig()
-        self.init_player = 1
+        self.init_player = 0
 
         # model / dataset setting
         self.model_base_dir = r"C:\Users\lucyc\Desktop\models"
@@ -47,15 +48,16 @@ class FreckersConfig:
         self.game_rounds_limit = 250
 
         # training setting
-        self.training_dataset_cross = 6
-        self.training_dataset_select_rate = 0.3
+        self.training_dataset_cross = 4 # +2
+        self.training_dataset_select_rate = 0.05
         self.training_dataset_eval_rate = 0.8
         self.train_config = TrainingConfig()
 
 
 
-
-        
+if __name__ == "__main__":
+    im = IterManager(FreckersConfig())
+    im.start()
 
 
 

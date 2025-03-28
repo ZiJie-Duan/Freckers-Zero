@@ -51,16 +51,23 @@ class MCTS:
         #     np.array_equal(temp_gb[0], temp_gb[6]) and
         #     np.array_equal(temp_gb[0], temp_gb[9]) and
         #     np.array_equal(temp_gb[0], temp_gb[12])):
-        if self.root:
+        if False:
             temp_gb = game_temp.get_gameboard_matrix(self.player)
-            if (np.array_equal(temp_gb[0], temp_gb[3]) and
-                np.array_equal(temp_gb[0], temp_gb[6]) and
-                np.array_equal(temp_gb[0], temp_gb[9]) and
-                np.array_equal(temp_gb[0], temp_gb[12]) and self.player == 0):
+            if (
+                np.array_equal(temp_gb[6], temp_gb[9]) and
+                np.array_equal(temp_gb[9], temp_gb[12]) and self.player == 0
+                and max_child.action == (0, 0, 0, 0, True)):
                     print("\n\ndebug_rec Player:", self.player)
                     game_temp.pprint(debug = True)
                     for i in range(len(debug_rec)):
                         print(debug_rec[i])
+                    print("max_child:", max_child.action)
+                    print("max_child.n:", max_child.n)
+                    print("max_child.w:", max_child.w)
+                    print("max_child.q:", max_child.q)
+                    print("max_child.p:", max_child.p)
+                    print("max:", max)
+                    print("self.temp_counter:", self.temp_counter)
                     input("Press Enter to continue...")
         #-----------------------------------------------------
         
@@ -73,12 +80,11 @@ class MCTS:
             child.p = child.p * (1 - self.config.dirichlet_epsilon) + dirichlet_noise[i] * self.config.dirichlet_epsilon
 
 
-    def expand(self, action_prob, rstk):
+    def expand(self, action_prob, rstk, game):
 
         for actions in rstk.get_action_space(self.player):
             base_loc = actions[0] # the location of the chess
             for action in actions[1:]: # loop to get the location where the chess will be placed
-                
                 self.children.append(
                     MCTS(
                         prob = action_prob[DeepFrecker.loc_trans(action[0], action[1])][base_loc[0]][base_loc[1]],
@@ -90,22 +96,34 @@ class MCTS:
                         )
                 )
 
-        self.children.append(
-            MCTS(
-                prob = action_prob[5][5][5], # fix the location of grow probability
-                action = (0, 0, 0, 0, True), # grow
-                config = self.config,
-                player = 0 if self.player == 1 else 1,
-                deepfrecker0= self.deepfrecker0,
-                deepfrecker1= self.deepfrecker1
+        # check if the last two action is grow
+        gamematrix = game.get_gameboard_matrix(self.player)
+        skip_grow = False
+        if self.player == 0:
+            if (np.array_equal(gamematrix[6], gamematrix[9]) and
+                np.array_equal(gamematrix[9], gamematrix[12])):
+                skip_grow = True
+        else:
+            if (np.array_equal(gamematrix[7], gamematrix[10]) and
+                np.array_equal(gamematrix[10], gamematrix[13])):
+                skip_grow = True
+
+        if not skip_grow:
+            self.children.append(
+                MCTS(
+                    prob = action_prob[5][5][5], # fix the location of grow probability
+                    action = (0, 0, 0, 0, True), # grow
+                    config = self.config,
+                    player = 0 if self.player == 1 else 1,
+                    deepfrecker0= self.deepfrecker0,
+                    deepfrecker1= self.deepfrecker1
                 )
         )
-
-        # add dirichlet noise when the game start the first step
         if self.root:
             self.add_dirichlet_noise()
 
     def simu(self, game):
+        self.temp_counter = 1 if not hasattr(self, 'temp_counter') else self.temp_counter + 1
         deep_frecker = self.deepfrecker0 if self.player == 0 else self.deepfrecker1
 
         if self.n == 0:
@@ -115,7 +133,7 @@ class MCTS:
             rstk = RSTK(game.get_gameboard())
 
             # expand
-            self.expand(action_prob, rstk)
+            self.expand(action_prob, rstk, game)
             # backp
             self.meta_value = value[0] # value has two value, first is win, second is lose
             self.n += 1

@@ -1,4 +1,3 @@
-from global_config import MctsConfig, FreckersConfig
 from deep_frecker import DeepFrecker
 from data_record import DataRecord
 from mcts_agent import MCTSAgent
@@ -11,8 +10,8 @@ from torch.utils.data import DataLoader, random_split
 
 class IterManager:
 
-    def __init__(self) -> None:
-        self.cfg = FreckersConfig()
+    def __init__(self, freckers_config) -> None:
+        self.cfg = freckers_config
         self.simulator = None
         self.trainer = None
 
@@ -53,7 +52,7 @@ class IterManager:
         else:
             for i in range(
                 max(1, now - self.cfg.training_dataset_cross),
-                now + 1):
+                now + 2):
 
                 datafiles.append(
                     self.cfg.dataset_base_dir + "\\" + str(i) + ".h5"
@@ -106,8 +105,9 @@ class IterManager:
             self.simulation_init()
             print("[IterManager]: iSimulation Init Finish")
 
-            if self.cfg.iter_now != 0:
+            if not self.cfg.skip_first_simu:
                 self.simulator.run(self.cfg.simulation_round)
+            self.cfg.skip_first_simu = False
 
             print("[IterManager]: Simulation Finish")
 
@@ -119,9 +119,30 @@ class IterManager:
             print("[IterManager]: Training Finish")
 
             self.cfg.iter_now += 1
+    
+    def compare_model(self):
+        model1 = torch.load(r"C:\Users\lucyc\Desktop\models\51.pth", weights_only=False)
+        model2 = torch.load(r"C:\Users\lucyc\Desktop\models\51.pth", weights_only=False)
+        
+        deepfrecker1 = DeepFrecker(model=model1)
+        deepfrecker2 = DeepFrecker(model=model2)
 
+        datarecorder = DataRecord(
+            file=self.cfg.dataset_base_dir 
+            + "\\" + "Test.h5")
+        
+        mcts_agent = MCTSAgent(
+            deepfrecker0=deepfrecker1,
+            deepfrecker1=deepfrecker2,
+            mcts_config= self.cfg.mcts_config,
+            first_player=self.cfg.init_player
+        )
 
+        game = Game(self.cfg.game_rounds_limit)
 
-if __name__ == "__main__":
-    im = IterManager()
-    im.start()
+        self.simulator = Simulator(
+            game=game, mcts_agent=mcts_agent, dataRecorder=datarecorder
+        )
+
+        self.simulator.run(self.cfg.simulation_round)
+

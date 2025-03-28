@@ -27,13 +27,11 @@ class Game:
         if player == 0:
             if (np.array_equal(gameboardmatrix[12], gameboardmatrix[9]) and
                 np.array_equal(gameboardmatrix[9], gameboardmatrix[6])):
-                print("Red Bad")
-                return -20
+                return -0.5
         elif player == 1:
             if (np.array_equal(gameboardmatrix[13], gameboardmatrix[10]) and
                 np.array_equal(gameboardmatrix[10], gameboardmatrix[7])):
-                print("Blue Bad")
-                return -20
+                return -0.5
         return 0
 
     def init(self):
@@ -81,7 +79,7 @@ class Game:
         
         winner = self.win_check()
         reward = 0 if winner == None else 1 if winner == player else -1
-        reward += self.custom_reward(player)
+        #reward += self.custom_reward(player)
         done = False if (self.rounds < self.rounds_limit) and (winner == None) else True
 
         musk_s = None
