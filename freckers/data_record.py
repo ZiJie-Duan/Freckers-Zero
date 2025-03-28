@@ -22,6 +22,7 @@ class DataRecord:
         """
         gameboard: 3x8x8
         action_prob: [(c,r,rn,cn,v), (c,r,rn,cn,v), ...]
+        # grow always in the last element in action space
         value: 1
         """
         action_prob_m = np.zeros((65, 8, 8), dtype=np.float32)

@@ -10,8 +10,8 @@ class MctsConfig:
         self.dirichlet_alpha = 0.1
         self.dirichlet_epsilon = 0.25
 
-        self.pb_c_base = 300
-        self.pb_c_init = 1.25
+        self.pb_c_base = 500
+        self.pb_c_init = 3
 
         self.search_step = 150
 

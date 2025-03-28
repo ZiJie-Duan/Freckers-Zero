@@ -23,10 +23,13 @@ class Simulator:
             action = self.mcts_agent.getAction(pi)
             player = self.mcts_agent.getPlayer()
 
+            # pi = [(r,c,rn,cn,v)...] # grow always in the end of the pi
+            # action = [(r,c,rn,cn,grow)...] 
+
             self.game.pprint()
             print(f"player: {player}, action: {action}")
 
-            s,r,sn,end = self.game.step(player, *(action[:-1]))
+            s,r,sn,end = self.game.step(player, *(action))
             self.mcts_agent.cutMove(pi) 
             self.dataRecorder.add(s,pi,0)
 

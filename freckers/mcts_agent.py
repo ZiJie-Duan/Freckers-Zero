@@ -95,11 +95,11 @@ class MCTS:
             for target_loc in actions[1:]: # loop to get the location where the chess will be placed
                 
                 # get the probability of the action matrix
-                prob = action_prob[DeepFrecker.loc_trans(target_loc[0], target_loc[1])][base_loc[0]][base_loc[1]],
-                action = (base_loc[0], base_loc[1], target_loc[0], target_loc[1], False),
+                prob = action_prob[DeepFrecker.loc_trans(target_loc[0], target_loc[1])][base_loc[0]][base_loc[1]]
+                action = (base_loc[0], base_loc[1], target_loc[0], target_loc[1], False)
                 
                 actions_list.append(action)
-                prob_list.append(prob)
+                prob_list.append(prob) # pick prob from a single element tuple
 
         # special case: skip grow action
         gamematrix = game.get_gameboard_matrix(self.player)
@@ -192,6 +192,12 @@ class MCTS:
     
 
     def getPi(self): 
+        """
+        return Pi
+        return [(r,c,rn,cn,v), (r,c,rn,cn,v), (r,c,rn,cn,v)]
+        the last action always a grow action (0,0,0,0,v)
+        """
+
         # Pi(a,s) = N(s,a)**(1/t) / Sum(N(s,b)**(1/t))
         # t_v = Sum(N(s,b)**(1/t))
         t_v = sum([c.n**(1/self.config.t) for c in self.children])
@@ -206,7 +212,7 @@ class MCTS:
             v_order_rec.append(v)
 
             # build up the strategy Pi(a,s)
-            pi.append(list(child.action))
+            pi.append(list(child.action)[:4]) # remove the grow flag
             if max < v:
                 max = v
                 max_child = child
@@ -218,7 +224,6 @@ class MCTS:
             pi[i].append(v_order_rec[i])
             pi[i] = tuple(pi[i])
         
-        print(pi)
         return pi
     
 
@@ -285,6 +290,16 @@ class MCTSAgent:
         return self.mcts.getPi() 
 
     def getAction(self,pi):
+        max_i = 0
+        max_v = -99999
+        for i, p in enumerate(pi):
+            if p[-1] > max_v:
+                max_v = p[-1]
+                max_i = i
+
+        return self.mcts.children[max_i].action
+    
+    def getActionVF(self,pi):
         max_i = 0
         max_v = -99999
         for i, p in enumerate(pi):

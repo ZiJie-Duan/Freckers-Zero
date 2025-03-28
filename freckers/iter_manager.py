@@ -7,6 +7,10 @@ from model import FreckersNet, FreckerDataSet
 from trainer import Trainer
 import torch
 from torch.utils.data import DataLoader, random_split
+import random
+import threading
+from multiprocessing import Process
+
 
 class IterManager:
 
@@ -97,11 +101,18 @@ class IterManager:
             val_dataset=val_dataset,
             modelPath=self.cfg.model_base_dir\
                 + "\\" + str(self.cfg.iter_now + 1) + ".pth")
-        
+    
+    def simulation_worker(self):
+        self.simulation_init()
+        if not self.cfg.skip_first_simu:
+            self.simulator.run(self.cfg.simulation_round)
+            self.cfg.skip_first_simu = False
+
         # 500k <- 25k
     def start(self):
         for i in range(self.cfg.iter_rounds):
             print(f"[IterManager]: Iter {i+1} Start.")
+
             self.simulation_init()
             print("[IterManager]: iSimulation Init Finish")
 
