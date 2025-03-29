@@ -25,9 +25,9 @@ class Game:
     def custom_reward_gravity(self, player, r, c, rn, cn, grow):
         reward = 0
         if player == 0:
-            reward += (rn - r) * 0.1
+            reward += (rn - r)**2 * 0.03
         elif player == 1:
-            reward += (rn - r) * -0.1
+            reward += (rn - r)**2 * 0.03
         return reward
 
     def init(self):

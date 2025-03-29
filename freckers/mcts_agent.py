@@ -55,7 +55,7 @@ class MCTS:
         #     np.array_equal(temp_gb[0], temp_gb[9]) and
         #     np.array_equal(temp_gb[0], temp_gb[12])):
         if False:
-            if self.root:
+            if self.root and (self.temp_counter == 1 or self.temp_counter == 298):
             # temp_gb = game_temp.get_gameboard_matrix(self.player)
             # if (
             #     np.array_equal(temp_gb[6], temp_gb[9]) and
@@ -72,7 +72,9 @@ class MCTS:
                 print("max_child.p:", max_child.p)
                 print("max:", max)
                 print("self.temp_counter:", self.temp_counter)
-                input("Press Enter to continue...")
+                u = input("TS>>")
+
+
         #-----------------------------------------------------
         
         return max_child

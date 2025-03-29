@@ -136,29 +136,4 @@ class IterManager:
 
             self.cfg.iter_now += 1
     
-    def compare_model(self):
-        model1 = torch.load(r"C:\Users\lucyc\Desktop\models\p35-45.pth", weights_only=False)
-        model2 = torch.load(r"C:\Users\lucyc\Desktop\models\p35-45.pth", weights_only=False)
-        
-        deepfrecker1 = DeepFrecker(model=model1)
-        deepfrecker2 = DeepFrecker(model=model2)
-
-        datarecorder = DataRecord(
-            file=self.cfg.dataset_base_dir 
-            + "\\" + "Test.h5")
-        
-        mcts_agent = MCTSAgent(
-            deepfrecker0=deepfrecker1,
-            deepfrecker1=deepfrecker2,
-            mcts_config= self.cfg.mcts_config,
-            first_player=self.cfg.init_player
-        )
-
-        game = Game(self.cfg.game_rounds_limit)
-
-        self.simulator = Simulator(
-            game=game, mcts_agent=mcts_agent, dataRecorder=datarecorder
-        )
-
-        self.simulator.run(self.cfg.simulation_round)
 
