@@ -20,7 +20,6 @@ class MCTS:
         self.p = prob # from parent nn
 
         self.children = [] 
-        self.meta_value = 0
         self.root = root
 
     def select(self, game_temp):
@@ -56,23 +55,24 @@ class MCTS:
         #     np.array_equal(temp_gb[0], temp_gb[9]) and
         #     np.array_equal(temp_gb[0], temp_gb[12])):
         if False:
-            temp_gb = game_temp.get_gameboard_matrix(self.player)
-            if (
-                np.array_equal(temp_gb[6], temp_gb[9]) and
-                np.array_equal(temp_gb[9], temp_gb[12]) and self.player == 0
-                and max_child.action == (0, 0, 0, 0, True)):
-                    print("\n\ndebug_rec Player:", self.player)
-                    game_temp.pprint(debug = True)
-                    for i in range(len(debug_rec)):
-                        print(debug_rec[i])
-                    print("max_child:", max_child.action)
-                    print("max_child.n:", max_child.n)
-                    print("max_child.w:", max_child.w)
-                    print("max_child.q:", max_child.q)
-                    print("max_child.p:", max_child.p)
-                    print("max:", max)
-                    print("self.temp_counter:", self.temp_counter)
-                    input("Press Enter to continue...")
+            if self.root:
+            # temp_gb = game_temp.get_gameboard_matrix(self.player)
+            # if (
+            #     np.array_equal(temp_gb[6], temp_gb[9]) and
+            #     np.array_equal(temp_gb[9], temp_gb[12]) and self.player == 0
+            #     and max_child.action == (0, 0, 0, 0, True)):
+                print("\n\ndebug_rec Player:", self.player)
+                game_temp.pprint(debug = True)
+                for i in range(len(debug_rec)):
+                    print(debug_rec[i])
+                print("max_child:", max_child.action)
+                print("max_child.n:", max_child.n)
+                print("max_child.w:", max_child.w)
+                print("max_child.q:", max_child.q)
+                print("max_child.p:", max_child.p)
+                print("max:", max)
+                print("self.temp_counter:", self.temp_counter)
+                input("Press Enter to continue...")
         #-----------------------------------------------------
         
         return max_child
@@ -105,12 +105,10 @@ class MCTS:
         gamematrix = game.get_gameboard_matrix(self.player)
         skip_grow = False
         if self.player == 0:
-            if (np.array_equal(gamematrix[6], gamematrix[9]) and
-                np.array_equal(gamematrix[9], gamematrix[12])):
+            if (np.array_equal(gamematrix[9], gamematrix[12])):
                 skip_grow = True
         else:
-            if (np.array_equal(gamematrix[7], gamematrix[10]) and
-                np.array_equal(gamematrix[10], gamematrix[13])):
+            if (np.array_equal(gamematrix[10], gamematrix[13])):
                 skip_grow = True
 
         if not skip_grow:
@@ -139,7 +137,7 @@ class MCTS:
             self.add_dirichlet_noise()
 
 
-    def simu(self, game):
+    def simu(self, game, parent_r = 0):
         self.temp_counter = 1 if not hasattr(self, 'temp_counter') else self.temp_counter + 1
         deep_frecker = self.deepfrecker0 if self.player == 0 else self.deepfrecker1
 
@@ -151,12 +149,13 @@ class MCTS:
 
             # expand
             self.expand(action_prob, rstk, game)
+
             # backp
-            self.meta_value = value[0]             
+            value = value[0] if parent_r == 0 else parent_r           
             self.n += 1
-            self.w += value[0]
-            self.q = value[0] / self.n
-            return value[0] # return estimated value and, but no reward
+            self.w += value
+            self.q = self.w / self.n
+            return value # return estimated value and, but no reward
 
         else:
             # selection
@@ -172,23 +171,24 @@ class MCTS:
                 
                 # if child finish the game
                 # update the parent node via inverse value
+                value = (1 - r) + parent_r
                 self.n += 1
-                self.w += (1 - r)
+                self.w += value
                 self.q = self.w / self.n
-                return (1 - r) # if end, return the reward instead of the estimated value
+                return value # if end, return the reward instead of the estimated value
             else:
                 # go deeper
-                value = child.simu(game)
+                value = child.simu(game, r)
 
                 # inverse value and r
-                value = (1 - value)
+                value = (1 - value) + parent_r
 
                 # backp
                 self.n += 1
                 self.w += value
                 self.q = self.w / self.n
 
-            return value # if not end, return the estimated value and the child's reward
+                return value # if not end, return the estimated value and the child's reward
     
 
     def getPi(self): 
@@ -245,7 +245,6 @@ class MCTS:
         self.p = max_child.p # from parent nn
         self.action = max_child.action
         self.children = max_child.children 
-        self.meta_value = max_child.meta_value
         self.root = True
 
         # add dirichlet noise when the tree change the node
@@ -282,6 +281,7 @@ class MCTSAgent:
         )
         
     def simulate(self, game):
+        self.mcts.temp_counter = 0
         for i in range(self.rounds):
             game_copy = copy.deepcopy(game)
             self.mcts.simu(game_copy)

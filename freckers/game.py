@@ -22,17 +22,13 @@ class Game:
 
         self.gameboard_memory.append(self.gamebaord.copy())
     
-    def custom_reward(self, player):
-        gameboardmatrix = self.get_gameboard_matrix(player)
+    def custom_reward_gravity(self, player, r, c, rn, cn, grow):
+        reward = 0
         if player == 0:
-            if (np.array_equal(gameboardmatrix[12], gameboardmatrix[9]) and
-                np.array_equal(gameboardmatrix[9], gameboardmatrix[6])):
-                return -0.5
+            reward += (rn - r) * 0.1
         elif player == 1:
-            if (np.array_equal(gameboardmatrix[13], gameboardmatrix[10]) and
-                np.array_equal(gameboardmatrix[10], gameboardmatrix[7])):
-                return -0.5
-        return 0
+            reward += (rn - r) * -0.1
+        return reward
 
     def init(self):
         self.__init__(self.rounds_limit)
@@ -79,7 +75,7 @@ class Game:
         
         winner = self.win_check()
         reward = 0 if winner == None else 1 if winner == player else -1
-        #reward += self.custom_reward(player)
+        reward += self.custom_reward_gravity(player, r, c, rn, cn, grow)
         done = False if (self.rounds < self.rounds_limit) and (winner == None) else True
 
         musk_s = None

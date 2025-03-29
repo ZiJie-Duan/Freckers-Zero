@@ -132,8 +132,8 @@ class IterManager:
             self.cfg.iter_now += 1
     
     def compare_model(self):
-        model1 = torch.load(r"C:\Users\lucyc\Desktop\models\51.pth", weights_only=False)
-        model2 = torch.load(r"C:\Users\lucyc\Desktop\models\51.pth", weights_only=False)
+        model1 = torch.load(r"C:\Users\lucyc\Desktop\models\p35-45.pth", weights_only=False)
+        model2 = torch.load(r"C:\Users\lucyc\Desktop\models\p35-45.pth", weights_only=False)
         
         deepfrecker1 = DeepFrecker(model=model1)
         deepfrecker2 = DeepFrecker(model=model2)

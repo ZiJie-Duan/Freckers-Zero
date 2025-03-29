@@ -34,7 +34,9 @@ class Trainer:
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model.to(device)
 
-        optimizer = optim.Adam(self.model.parameters(), lr=config.max_l_rate)
+        optimizer = optim.Adam(self.model.parameters(), 
+                               lr=config.max_l_rate,
+                               weight_decay=0.01)
         # scheduler = OneCycleLR(
         #     optimizer,
         #     max_lr=config.max_l_rate,  # 最大学习率
