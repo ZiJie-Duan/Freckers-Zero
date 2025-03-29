@@ -30,12 +30,12 @@ class FreckersConfig:
     
     def __init__(self) -> None:
         # iter setting
-        self.iter_rounds = 100
-        self.iter_now = 45
+        self.iter_rounds = 2000
+        self.iter_now = 10
         self.skip_first_simu = True
 
         # simulation setting
-        self.simulation_round = 20
+        self.simulation_round = 3
         self.simulation_thred = 3
 
         # mcts setting
@@ -51,16 +51,16 @@ class FreckersConfig:
 
         # training setting
         self.training_dataset_cross = 18 # +2
-        self.training_dataset_select_rate = 0.05
-        self.training_dataset_eval_rate = 0.8
+        self.training_dataset_select_rate = 0.1
+        self.training_dataset_eval_rate = 0.98
         self.train_config = TrainingConfig()
 
 
 
 if __name__ == "__main__":
     im = IterManager(FreckersConfig())
-    #im.start()
-    im.compare_model()
+    im.start()
+    #im.compare_model()
 
 
 

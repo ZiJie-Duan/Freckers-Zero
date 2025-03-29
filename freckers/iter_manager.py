@@ -25,9 +25,12 @@ class IterManager:
         if self.cfg.iter_now == 0:
             model = FreckersNet()
         else:
-            model = torch.load(
+            print("[IterManager]: Load Model from CheckPoint")
+            checkpoint = torch.load(
                 self.cfg.model_base_dir 
                 + "\\" + str(self.cfg.iter_now) + ".pth", weights_only=False)
+            model = FreckersNet()
+            model.load_state_dict(checkpoint['model_state_dict'])
         
         deepfrecker = DeepFrecker(model=model)
         datarecorder = DataRecord(
@@ -80,28 +83,27 @@ class IterManager:
         val_dataset, _ = random_split(val_dataset, 
             [int(select_rate * len(val_dataset)), len(val_dataset) - int(select_rate * len(val_dataset))])
         
+        print(len(train_dataset))
                     
         return train_dataset, val_dataset
 
 
     def training_init(self):
-        model = None
-        if self.cfg.iter_now == 0:
-            model = FreckersNet()
-        else:
-            model = torch.load(
-                self.cfg.model_base_dir 
-                + "\\" + str(self.cfg.iter_now) + ".pth", weights_only=False)
-            
-        train_dataset, val_dataset = self.load_dataset()
 
-        self.trainer = Trainer(
-            model=model,
-            train_dataset=train_dataset,
-            val_dataset=val_dataset,
-            modelPath=self.cfg.model_base_dir\
-                + "\\" + str(self.cfg.iter_now + 1) + ".pth")
-    
+        if self.cfg.iter_now == 0:
+            self.trainer = Trainer(
+                checkpointFile="",
+                config=self.cfg.train_config,
+                no_checkpoint=True
+            )       
+        else:
+            self.trainer = Trainer(
+                checkpointFile=self.cfg.model_base_dir\
+                        + "\\" + str(self.cfg.iter_now) + ".pth",
+                config=self.cfg.train_config
+            )       
+
+
     def simulation_worker(self):
         self.simulation_init()
         if not self.cfg.skip_first_simu:
@@ -110,6 +112,9 @@ class IterManager:
 
         # 500k <- 25k
     def start(self):
+        self.training_init()
+        print("[IterManager]: Training Init Finish")
+
         for i in range(self.cfg.iter_rounds):
             print(f"[IterManager]: Iter {i+1} Start.")
 
@@ -122,11 +127,11 @@ class IterManager:
 
             print("[IterManager]: Simulation Finish")
 
-            self.training_init()
+            train_dataset, val_dataset = self.load_dataset()
+            self.trainer.train(self.cfg.train_config, 
+                self.cfg.model_base_dir + "\\" + str(self.cfg.iter_now + 1) + ".pth",
+                train_dataset, val_dataset)
             
-            print("[IterManager]: Training Init Finish")
-
-            self.trainer.train(self.cfg.train_config)
             print("[IterManager]: Training Finish")
 
             self.cfg.iter_now += 1
