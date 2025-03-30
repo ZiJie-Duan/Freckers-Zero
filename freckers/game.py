@@ -75,7 +75,7 @@ class Game:
         
         winner = self.win_check()
         reward = 0 if winner == None else 1 if winner == player else -1
-        reward += self.custom_reward_gravity(player, r, c, rn, cn, grow)
+        #reward += self.custom_reward_gravity(player, r, c, rn, cn, grow)
         done = False if (self.rounds < self.rounds_limit) and (winner == None) else True
 
         musk_s = None

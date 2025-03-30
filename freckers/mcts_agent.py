@@ -55,7 +55,7 @@ class MCTS:
         #     np.array_equal(temp_gb[0], temp_gb[9]) and
         #     np.array_equal(temp_gb[0], temp_gb[12])):
         if False:
-            if self.root and (self.temp_counter == 1 or self.temp_counter == 298):
+            if self.root and (self.temp_counter == 1 or self.temp_counter == 199):
             # temp_gb = game_temp.get_gameboard_matrix(self.player)
             # if (
             #     np.array_equal(temp_gb[6], temp_gb[9]) and
@@ -119,7 +119,7 @@ class MCTS:
             # the last layer store the probability of grow
         else:
             actions_list.append((0, 0, 0, 0, True))
-            prob_list.append(0) 
+            prob_list.append(0.01) 
 
         prob_list = np.exp(prob_list) / np.sum(np.exp(prob_list))
 
@@ -166,6 +166,7 @@ class MCTS:
             s,r,sn,end = game.step(self.player, *child.action)
 
             if end:
+                #print("Touch the End")
                 # update the child node!!!
                 child.n += 1
                 child.w += r

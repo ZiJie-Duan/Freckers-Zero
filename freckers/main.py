@@ -23,10 +23,10 @@ class MctsConfig:
         self.dirichlet_alpha = 0.1
         self.dirichlet_epsilon = 0.25
 
-        self.pb_c_base = 2000
+        self.pb_c_base = 1000
         self.pb_c_init = 3
 
-        self.search_step = 300
+        self.search_step = 200
 
 
 class TrainingConfig:
@@ -35,7 +35,7 @@ class TrainingConfig:
         self.shuffle = True
         self.num_workers = 1
         self.epochs = 1
-        self.max_l_rate = 0.001
+        self.max_l_rate = 0.0001
         self.min_l_rate = 0.00001
 
  
@@ -46,11 +46,11 @@ class FreckersConfig:
         self.iter_rounds = 2000
         # after 36, no gravity anymore
         self.iter_now = 0
-        self.skip_first_simu = True
+        self.skip_first_simu = False
 
         # simulation setting
-        self.simulation_round = 10
-        self.simulation_thread = 4
+        self.simulation_round = 50
+        self.simulation_thread = 1
 
         # mcts setting
         self.mcts_config = MctsConfig()
@@ -64,8 +64,8 @@ class FreckersConfig:
         self.game_rounds_limit = 250
 
         # training setting
-        self.training_dataset_cross = 38 # +2
-        self.training_dataset_select_rate = 0.03
+        self.training_dataset_cross = 20 # +2
+        self.training_dataset_select_rate = 0.02
         self.training_dataset_eval_rate = 0.98
         self.train_config = TrainingConfig()
 
@@ -98,9 +98,11 @@ class IterManagerMultiProcess(IterManager):
 
         
     def compare_model(self):
-        check1 = torch.load(r"C:\Users\lucyc\Desktop\models\87.pth", weights_only=False)
-        model1 = FreckersNet()
-        model1.load_state_dict(check1['model_state_dict'])
+        # check1 = torch.load(r"C:\Users\lucyc\Desktop\models\1.pth", weights_only=False)
+        # model1 = FreckersNet()
+        # model1.load_state_dict(check1['model_state_dict'])
+        model1 = torch.load(r"C:\Users\lucyc\Desktop\P9-15.pth", weights_only=False)
+        # model2 = torch.load(r"C:\Users\lucyc\Desktop\models\1.pth", weights_only=False)
         check2 = torch.load(r"C:\Users\lucyc\Desktop\models\1.pth", weights_only=False)
         model2 = FreckersNet()
         model2.load_state_dict(check2['model_state_dict'])
@@ -161,9 +163,9 @@ def main():
 
 if __name__ == "__main__":
     main()
-    # im = IterManager(FreckersConfig())
-    # im.start()
+    # im = IterManagerMultiProcess(FreckersConfig(), 0)
     # im.compare_model()
 
 
 
+# note 可以尝试 移除生长 在空间中 防止神经网络 不喜欢 生长策略
