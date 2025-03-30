@@ -90,6 +90,8 @@ class MCTS:
 
         actions_list = []
         prob_list = []
+
+        grow_prob = []
         
         # check if the last two action is grow
         for actions in rstk.get_action_space(self.player):
@@ -103,23 +105,34 @@ class MCTS:
                 actions_list.append(action)
                 prob_list.append(prob) # pick prob from a single element tuple
 
-        # special case: skip grow action
-        gamematrix = game.get_gameboard_matrix(self.player)
-        skip_grow = False
-        if self.player == 0:
-            if (np.array_equal(gamematrix[9], gamematrix[12])):
-                skip_grow = True
-        else:
-            if (np.array_equal(gamematrix[10], gamematrix[13])):
-                skip_grow = True
-
-        if not skip_grow:
-            actions_list.append((0,0,0,0, True))
-            prob_list.append(action_prob[64][0][0]) 
+            # add the grow probability, 
             # the last layer store the probability of grow
+            grow_prob.append(action_prob[64][base_loc[0]][base_loc[1]])
+
+        # # special case: skip grow action
+        # gamematrix = game.get_gameboard_matrix(self.player)
+        # skip_grow = False
+        # if self.player == 0:
+        #     if (np.array_equal(gamematrix[9], gamematrix[12])):
+        #         skip_grow = True
+        # else:
+        #     if (np.array_equal(gamematrix[10], gamematrix[13])):
+        #         skip_grow = True
+
+        # if not skip_grow:
+        #     actions_list.append((0,0,0,0, True))
+        #     prob_list.append(action_prob[64][0][0]) 
+        #     # the last layer store the probability of grow
+        # else:
+        #     actions_list.append((0, 0, 0, 0, True))
+        #     prob_list.append(0.01) 
+        
+        actions_list.append((0,0,0,0, True))
+        
+        if len(grow_prob) == 0:
+            prob_list.append(1)
         else:
-            actions_list.append((0, 0, 0, 0, True))
-            prob_list.append(0.01) 
+            prob_list.append(max(np.mean(grow_prob), self.config.small))
 
         prob_list = np.exp(prob_list) / np.sum(np.exp(prob_list))
 

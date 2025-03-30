@@ -45,12 +45,12 @@ class FreckersConfig:
         # iter setting
         self.iter_rounds = 2000
         # after 36, no gravity anymore
-        self.iter_now = 0
+        self.iter_now = 22
         self.skip_first_simu = False
 
         # simulation setting
         self.simulation_round = 50
-        self.simulation_thread = 1
+        self.simulation_thread = 3
 
         # mcts setting
         self.mcts_config = MctsConfig()
@@ -65,7 +65,7 @@ class FreckersConfig:
 
         # training setting
         self.training_dataset_cross = 20 # +2
-        self.training_dataset_select_rate = 0.02
+        self.training_dataset_select_rate = 0.01
         self.training_dataset_eval_rate = 0.98
         self.train_config = TrainingConfig()
 
@@ -101,9 +101,9 @@ class IterManagerMultiProcess(IterManager):
         # check1 = torch.load(r"C:\Users\lucyc\Desktop\models\1.pth", weights_only=False)
         # model1 = FreckersNet()
         # model1.load_state_dict(check1['model_state_dict'])
-        model1 = torch.load(r"C:\Users\lucyc\Desktop\P9-15.pth", weights_only=False)
+        model1 = torch.load(r"C:\Users\lucyc\Desktop\np.pth", weights_only=False)
         # model2 = torch.load(r"C:\Users\lucyc\Desktop\models\1.pth", weights_only=False)
-        check2 = torch.load(r"C:\Users\lucyc\Desktop\models\1.pth", weights_only=False)
+        check2 = torch.load(r"C:\Users\lucyc\Desktop\models\10.pth", weights_only=False)
         model2 = FreckersNet()
         model2.load_state_dict(check2['model_state_dict'])
         

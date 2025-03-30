@@ -32,8 +32,9 @@ class DataRecord:
                           action_prob[i][1]]\
                         = action_prob[i][4]
             
-        # add the grow probability
-        action_prob_m[64, 0, 0] = action_prob[-1][4]
+            # add the grow probability
+            # 在每一个合法动作65层中，添加grow概率
+            action_prob_m[64, action_prob[i][0], action_prob[i][1]] = action_prob[-1][4]
 
         gameboard = np.array([gameboard], dtype=np.float32)
         action_prob_m = np.array([action_prob_m], dtype=np.float32)

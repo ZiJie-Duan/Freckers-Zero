@@ -83,24 +83,74 @@ class MaskLoss(nn.Module):
     def __init__(self):
         super(MaskLoss, self).__init__()
 
+    
     def forward(self, predictions, targets):
-        # 创建mask：检查每个像素的所有通道是否包含非零值
-        mask = targets.sum(dim=1, keepdim=True) > 0  # (B, 1, 8, 8)
-        
-        # 对预测结果进行log_softmax处理（沿通道维度）
-        log_softmax_pred = F.log_softmax(predictions, dim=1)
-        
-        # 计算交叉熵损失（元素级）
-        cross_entropy = - (targets * log_softmax_pred).sum(dim=1)  # (B, 8, 8)
-        
-        # 应用mask筛选需要计算的像素
-        valid_loss = cross_entropy[mask.squeeze(1)]  # 只保留被点亮的像素
-        
-        # 处理无有效像素的情况
-        if valid_loss.numel() == 0:
-            return torch.tensor(0.0, device=predictions.device)
-        
-        return valid_loss.mean()
+
+        # OK 这是一个非常诡异的损失函数
+        # 我不知道，我觉得还是蛮有道理的 就是不确定
+        # 在我的设计中 模型的行为概率矩阵是 B, 65, 8, 8
+        # B 是batch size, 65 是64个合法动作+1个grow动作 （grow在第65个通道）
+        # 8, 8 是游戏棋盘的大小
+        # grow 是一个全局的动作，不需要指定位置
+        # 这就是我要将所有合法位置的第65个通道求平均的原因
+        # 我希望神经网络在想要grow的时候 尽可能的在所有合法位置上输出grow 信号
+        # 我将 64个合法动作的概率 和 grow的概率 分开计算
+
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        predictions = predictions.to(device)
+        targets = targets.to(device)
+
+        # 首先将移动概率和 grow概率分开
+        pred_main = predictions[:, :-1]  # (b, 64, 8, 8)
+        pred_grow = predictions[:, -1]   # (b, 8, 8)
+        label_main = targets[:, :-1]
+        label_grow = targets[:, -1]
+
+        # 创建非零的遮罩
+        grow_mask = label_grow != 0
+        label_grow = label_grow * grow_mask
+        pred_grow = pred_grow * grow_mask
+
+        # 然后计算 grow 的统计信息
+        label_grow_counts = torch.count_nonzero(label_grow, dim=(1, 2))
+        label_grow_sums = torch.sum(label_grow, dim=(1, 2))
+        pred_grow_counts = torch.count_nonzero(pred_grow, dim=(1, 2))
+        pred_grow_sums = torch.sum(pred_grow, dim=(1, 2))
+
+        # 求出grow 的平均数值
+        label_grow_mean = torch.zeros_like(label_grow_sums)
+        mask = label_grow_counts != 0
+        label_grow_mean[mask] = label_grow_sums[mask] / label_grow_counts[mask]
+
+        pred_grow_mean = torch.zeros_like(pred_grow_sums)
+        mask = pred_grow_counts != 0
+        pred_grow_mean[mask] = pred_grow_sums[mask] / pred_grow_counts[mask]
+
+        # 建立移动行为的遮罩
+        main_mask = label_main != 0
+        label_main = label_main * main_mask
+        pred_main = pred_main * main_mask
+
+        # 接下来，将整个移动行为概率矩阵拉平，并加入grow的平均数值
+        B, C, H, W = pred_main.shape
+        main_mask_flat = main_mask.view(B, -1)
+        main_mask_flat = torch.concat((main_mask_flat, torch.ones(B, 1, dtype=torch.bool, device=device)), dim=1)
+        pred_main_flat = pred_main.view(B, -1)  # -1 自动计算 H*W
+        pred_main_flat = torch.concat((pred_main_flat, pred_grow_mean.view(B, 1)), dim=1)
+        label_main_flat = label_main.view(B, -1)  # -1 自动计算 H*W
+        label_main_flat = torch.concat((label_main_flat, label_grow_mean.view(B, 1)), dim=1)
+
+        # 然后，用拉平的遮罩将所有的生效数值取出，并进行交叉熵计算
+        loss = 0
+        count = 0
+        for i in range(B):
+            log_softmax = F.log_softmax(pred_main_flat[i][main_mask_flat[i]])
+            labels = label_main_flat[i][main_mask_flat[i]]
+            loss += - (labels * log_softmax).sum()  # (B, 8, 8)
+            count += len(labels)
+
+        # 最后，返回平均损失
+        return loss/count
 
 
 class FreckerDataSet(Dataset):
