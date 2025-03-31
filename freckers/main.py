@@ -45,11 +45,11 @@ class FreckersConfig:
         # iter setting
         self.iter_rounds = 2000
         # after 36, no gravity anymore
-        self.iter_now = 22
+        self.iter_now = 0
         self.skip_first_simu = False
 
-        # simulation setting
-        self.simulation_round = 50
+        # simulation settingss
+        self.simulation_round = 2000
         self.simulation_thread = 3
 
         # mcts setting
@@ -101,11 +101,11 @@ class IterManagerMultiProcess(IterManager):
         # check1 = torch.load(r"C:\Users\lucyc\Desktop\models\1.pth", weights_only=False)
         # model1 = FreckersNet()
         # model1.load_state_dict(check1['model_state_dict'])
-        model1 = torch.load(r"C:\Users\lucyc\Desktop\np.pth", weights_only=False)
-        # model2 = torch.load(r"C:\Users\lucyc\Desktop\models\1.pth", weights_only=False)
-        check2 = torch.load(r"C:\Users\lucyc\Desktop\models\10.pth", weights_only=False)
-        model2 = FreckersNet()
-        model2.load_state_dict(check2['model_state_dict'])
+        model1 = torch.load(r"C:\Users\lucyc\Desktop\np2.pth", weights_only=False)
+        model2 = torch.load(r"C:\Users\lucyc\Desktop\np1.pth", weights_only=False)
+        # check2 = torch.load(r"C:\Users\lucyc\Desktop\models\10.pth", weights_only=False)
+        # model2 = FreckersNet()
+        # model2.load_state_dict(check2['model_state_dict'])
         
         deepfrecker1 = DeepFrecker(model=model1)
         deepfrecker2 = DeepFrecker(model=model2)

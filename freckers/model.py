@@ -47,7 +47,9 @@ class FreckersNet(nn.Module):
         self.conv1 = nn.Conv2d(16, 32, kernel_size=3, padding=1)
         self.relu1 = nn.ReLU()
         self.residual_block1 = ResidualBlock(32, 32)
-        #self.residual_block2 = ResidualBlock(32, 32)
+        self.residual_block2 = ResidualBlock(32, 32)
+        self.residual_block3 = ResidualBlock(32, 32)
+        self.residual_block4 = ResidualBlock(32, 32)
         
         # 图像输出头
         self.img_head = nn.Conv2d(32, 65, kernel_size=3, padding=1)
@@ -65,7 +67,10 @@ class FreckersNet(nn.Module):
         # 公共特征处理
         x = self.relu1(self.conv1(x))
         x = self.residual_block1(x)
-        #x = self.residual_block2(x)
+        x = self.residual_block2(x)
+        # x = self.residual_block3(x)
+        # x = self.residual_block4(x)
+
 
         # 图像输出分支  
         img_out = self.img_head(x)
