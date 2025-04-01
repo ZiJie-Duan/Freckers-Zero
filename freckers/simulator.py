@@ -1,10 +1,11 @@
 import copy
 class Simulator:
 
-    def __init__(self, game, mcts_agent, dataRecorder) -> None:
+    def __init__(self, game, mcts_agent, dataRecorder, visulze=False) -> None:
         self.game = game
         self.mcts_agent = mcts_agent
         self.dataRecorder = dataRecorder
+        self.visulze = visulze
 
     def play(self):
         self.game.init()
@@ -26,15 +27,17 @@ class Simulator:
             # pi = [(r,c,rn,cn,v)...] # grow always in the end of the pi
             # action = [(r,c,rn,cn,grow)...] 
 
-            self.game.pprint()
-            print(f"player: {player}, action: {action}")
+            if self.visulze:
+                self.game.pprint()
+                print(f"player: {player}, action: {action}")
 
             s,r,sn,end = self.game.step(player, *(action))
             self.mcts_agent.cutMove(pi) 
             self.dataRecorder.add(s,pi,0)
 
-            if end:
-                print("end")
+            if end: 
+                print(f"end within {i} steps")
+                print(f"player: {player}, Win: {r}")
                 self.dataRecorder.update_value_and_save(r)
                 break
 

@@ -47,7 +47,7 @@ class IterManager:
         game = Game(self.cfg.game_rounds_limit)
 
         self.simulator = Simulator(
-            game=game, mcts_agent=mcts_agent, dataRecorder=datarecorder
+            game=game, mcts_agent=mcts_agent, dataRecorder=datarecorder, visulze=self.cfg.visulze
         )
 
 

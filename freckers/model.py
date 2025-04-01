@@ -44,18 +44,17 @@ class FreckersNet(nn.Module):
     def __init__(self):
         super(FreckersNet, self).__init__()
         # 公共特征提取部分 
-        self.conv1 = nn.Conv2d(16, 32, kernel_size=3, padding=1)
+        self.conv1 = nn.Conv2d(16, 128, kernel_size=3, padding=1)
         self.relu1 = nn.ReLU()
-        self.residual_block1 = ResidualBlock(32, 32)
-        self.residual_block2 = ResidualBlock(32, 32)
-        self.residual_block3 = ResidualBlock(32, 32)
-        self.residual_block4 = ResidualBlock(32, 32)
+        self.residual_block1 = ResidualBlock(128, 256)
+        self.residual_block2 = ResidualBlock(256, 256)
+        self.residual_block3 = ResidualBlock(256, 256)
         
         # 图像输出头
-        self.img_head = nn.Conv2d(32, 65, kernel_size=3, padding=1)
+        self.img_head = nn.Conv2d(256, 65, kernel_size=3, padding=1)
 
         # 数值概率输出头
-        self.prob_conv = nn.Conv2d(32, 5, kernel_size=3, padding=1)
+        self.prob_conv = nn.Conv2d(256, 5, kernel_size=3, padding=1)
         self.relu4 = nn.ReLU()
         self.flatten = nn.Flatten()
         self.fc1 = nn.Linear(5 * 8 * 8, 16)
@@ -68,6 +67,7 @@ class FreckersNet(nn.Module):
         x = self.relu1(self.conv1(x))
         x = self.residual_block1(x)
         x = self.residual_block2(x)
+        x = self.residual_block3(x)
         # x = self.residual_block3(x)
         # x = self.residual_block4(x)
 

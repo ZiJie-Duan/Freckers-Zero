@@ -42,14 +42,15 @@ class TrainingConfig:
 class FreckersConfig:
     
     def __init__(self) -> None:
+        self.visulze = False
         # iter setting
         self.iter_rounds = 2000
         # after 36, no gravity anymore
         self.iter_now = 0
-        self.skip_first_simu = False
+        self.skip_first_simu = True
 
         # simulation settingss
-        self.simulation_round = 2000
+        self.simulation_round = 35
         self.simulation_thread = 3
 
         # mcts setting
@@ -65,7 +66,7 @@ class FreckersConfig:
 
         # training setting
         self.training_dataset_cross = 20 # +2
-        self.training_dataset_select_rate = 0.01
+        self.training_dataset_select_rate = 0.007
         self.training_dataset_eval_rate = 0.98
         self.train_config = TrainingConfig()
 
@@ -86,6 +87,7 @@ class IterManagerMultiProcess(IterManager):
             self.cfg.model_base_dir + "\\" + str(self.cfg.iter_now + 1) + ".pth",
             train_dataset, val_dataset)
         print(f"[IterManagerMultiProcess:{self.thread_number}]: Training Finish")
+        self.trainer = None
 
     def mp_simu(self):
         print(f"[IterManagerMultiProcess:{self.thread_number}]: Simulation Init")
@@ -98,14 +100,16 @@ class IterManagerMultiProcess(IterManager):
 
         
     def compare_model(self):
-        # check1 = torch.load(r"C:\Users\lucyc\Desktop\models\1.pth", weights_only=False)
+        # model1 = torch.load(r"C:\Users\lucyc\Desktop\np2.pth", weights_only=False)
+        # model2 = torch.load(r"C:\Users\lucyc\Desktop\np1.pth", weights_only=False)
+
+        # check1 = torch.load(r"C:\Users\lucyc\Desktop\models\3.pth", weights_only=False)
         # model1 = FreckersNet()
         # model1.load_state_dict(check1['model_state_dict'])
-        model1 = torch.load(r"C:\Users\lucyc\Desktop\np2.pth", weights_only=False)
-        model2 = torch.load(r"C:\Users\lucyc\Desktop\np1.pth", weights_only=False)
-        # check2 = torch.load(r"C:\Users\lucyc\Desktop\models\10.pth", weights_only=False)
-        # model2 = FreckersNet()
-        # model2.load_state_dict(check2['model_state_dict'])
+        model1 = FreckersNet()
+        check2 = torch.load(r"C:\Users\lucyc\Desktop\models\24.pth", weights_only=False)
+        model2 = FreckersNet()
+        model2.load_state_dict(check2['model_state_dict'])
         
         deepfrecker1 = DeepFrecker(model=model1)
         deepfrecker2 = DeepFrecker(model=model2)
@@ -124,7 +128,7 @@ class IterManagerMultiProcess(IterManager):
         game = Game(self.cfg.game_rounds_limit)
 
         self.simulator = Simulator(
-            game=game, mcts_agent=mcts_agent, dataRecorder=datarecorder
+            game=game, mcts_agent=mcts_agent, dataRecorder=datarecorder, visulze=self.cfg.visulze
         )
 
         self.simulator.run(self.cfg.simulation_round)
@@ -141,8 +145,8 @@ def main():
     cfg = FreckersConfig()
     im = IterManagerMultiProcess(cfg, 0)
 
-    for i in range(cfg.simulation_round):
-        print(f"[Main]: Simulation Round {i}")
+    for i in range(cfg.iter_rounds):
+        print(f"[Main]: Iteration {i}")
 
         if not cfg.skip_first_simu:
             simulation_processes = []
@@ -162,9 +166,9 @@ def main():
         cfg.iter_now += 1
 
 if __name__ == "__main__":
-    main()
-    # im = IterManagerMultiProcess(FreckersConfig(), 0)
-    # im.compare_model()
+    # main()
+    im = IterManagerMultiProcess(FreckersConfig(), 0)
+    im.compare_model()
 
 
 

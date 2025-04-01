@@ -55,7 +55,7 @@ class MCTS:
         #     np.array_equal(temp_gb[0], temp_gb[9]) and
         #     np.array_equal(temp_gb[0], temp_gb[12])):
         if False:
-            if self.root and (self.temp_counter == 1 or self.temp_counter == 199):
+            if self.root and (self.temp_counter == 1 or self.temp_counter == 1599):
             # temp_gb = game_temp.get_gameboard_matrix(self.player)
             # if (
             #     np.array_equal(temp_gb[6], temp_gb[9]) and
@@ -179,7 +179,7 @@ class MCTS:
             s,r,sn,end = game.step(self.player, *child.action)
 
             if end:
-                #print("Touch the End")
+                # print("TE ", end="")
                 # update the child node!!!
                 child.n += 1
                 child.w += r

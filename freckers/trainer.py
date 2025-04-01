@@ -57,12 +57,10 @@ class Trainer:
     def get_dataloader(self, config, train_dataset, val_dataset):
         self.train_loader = DataLoader(
             train_dataset, batch_size=config.batch_size, 
-            shuffle=config.shuffle, num_workers=config.num_workers, 
-            persistent_workers=True)
+            shuffle=config.shuffle)
         self.val_loader = DataLoader(
             val_dataset, batch_size=config.batch_size, 
-            shuffle=config.shuffle, num_workers=config.num_workers, 
-            persistent_workers=True)
+            shuffle=config.shuffle)
 
 
     def train(self, config, checkPointFile, train_dataset, val_dataset):
