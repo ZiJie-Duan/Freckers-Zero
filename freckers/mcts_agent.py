@@ -3,12 +3,12 @@ from freckers_gym import RSTK
 from deep_frecker import DeepFrecker
 import numpy as np
 import copy
-import math
+import math 
+import time
 
 class MCTS:
     def __init__(self, prob, action, config, 
                  deepfrecker0, deepfrecker1, player=0, root=False) -> None:
-        
         self.deepfrecker0 = deepfrecker0
         self.deepfrecker1 = deepfrecker1
         self.player = player # 0/1
@@ -166,7 +166,8 @@ class MCTS:
             self.expand(action_prob, rstk, game)
 
             # backp
-            value = value[0] if parent_r == 0 else parent_r           
+            value = (1 - value[0])
+            value = value if parent_r == 0 else parent_r           
             self.n += 1
             self.w += value
             self.q = self.w / self.n

@@ -1,150 +1,345 @@
-import numpy as np
-from scipy.signal import convolve2d
-from game import Game
-from freckers_gym import RSTK
-from freckers.mcts_agent import MCTS
-from fnet import Conv3DStack
-from deep_frecker import DeepFrecker
-from deep_frecker import DataRecord
-import copy
+data = """end within 140 steps
+end within 165 steps
+player: 0, Win: 1
+end within 189 steps
+player: 0, Win: 1
+end within 212 steps
+player: 1, Win: 1
+end within 126 steps
+player: 1, Win: 1
+end within 157 steps
+player: 0, Win: 1
+end within 137 steps
+player: 0, Win: 1
+end within 163 steps
+player: 0, Win: 1
+end within 229 steps
+player: 0, Win: 1
+end within 173 steps
+player: 0, Win: 1
+end within 151 steps
+player: 0, Win: 1
+end within 154 steps
+player: 1, Win: 1
+end within 215 steps
+player: 0, Win: 1
+end within 137 steps
+player: 0, Win: 1
+end within 151 steps
+player: 0, Win: 1
+end within 173 steps
+player: 0, Win: 1
+end within 137 steps
+player: 0, Win: 1
+end within 129 steps
+player: 0, Win: 1
+end within 227 steps
+player: 0, Win: 1
+end within 140 steps
+player: 1, Win: 1
+end within 176 steps
+player: 1, Win: 1
+end within 174 steps
+player: 1, Win: 1
+end within 167 steps
+player: 0, Win: 1
+end within 124 steps
+player: 1, Win: 1
+end within 203 steps
+player: 0, Win: 1
+end within 172 steps
+player: 1, Win: 1
+end within 186 steps
+player: 1, Win: 1
+end within 161 steps
+player: 0, Win: 1
+end within 151 steps
+player: 0, Win: 1
+end within 125 steps
+player: 0, Win: 1
+end within 139 steps
+player: 0, Win: 1
+end within 147 steps
+player: 0, Win: 1
+end within 140 steps
+player: 1, Win: 1
+end within 113 steps
+player: 0, Win: 1
+end within 203 steps
+player: 0, Win: 1
+end within 154 steps
+player: 1, Win: 1
+end within 202 steps
+player: 1, Win: 1
+end within 209 steps
+player: 0, Win: 1
+end within 173 steps
+player: 0, Win: 1
+end within 209 steps
+player: 0, Win: 1
+end within 163 steps
+player: 0, Win: 1
+end within 171 steps
+player: 0, Win: 1
+end within 191 steps
+player: 0, Win: 1
+end within 187 steps
+player: 0, Win: 1
+end within 139 steps
+player: 0, Win: 1
+end within 200 steps
+player: 1, Win: 1
+end within 161 steps
+player: 0, Win: 1
+end within 161 steps
+player: 0, Win: 1
+end within 247 steps
+player: 0, Win: 1
+end within 145 steps
+player: 0, Win: 1
+end within 159 steps
+player: 0, Win: 1
+end within 211 steps
+player: 0, Win: 1
+end within 191 steps
+player: 0, Win: 1
+end within 196 steps
+player: 1, Win: 1
+end within 171 steps
+player: 0, Win: 1
+end within 189 steps
+player: 0, Win: 1
+end within 141 steps
+player: 0, Win: 1
+end within 202 steps
+player: 1, Win: 1
+end within 250 steps
+player: 1, Win: 0
+end within 119 steps
+player: 0, Win: 1
+end within 115 steps
+player: 0, Win: 1
+end within 158 steps
+player: 1, Win: 1
+end within 173 steps
+player: 0, Win: 1
+end within 198 steps
+player: 1, Win: 1
+end within 129 steps
+player: 0, Win: 1
+end within 119 steps
+player: 0, Win: 1
+end within 159 steps
+player: 0, Win: 1
+end within 174 steps
+player: 1, Win: 1
+end within 119 steps"""
 
-class MCTSTest(MCTS):
-    def __init__(self, prob, action, config, deep_frecker, 
-                 data_record=None, game=None, player=0) -> None:
-        super().__init__(prob, action, config, deep_frecker, 
-                         data_record, game, player)
-        
+t = """
+end within 140 steps
+end within 113 steps
+player: 0, Win: 1
+end within 117 steps
+player: 0, Win: 1
+end within 126 steps
+player: 1, Win: 1
+end within 108 steps
+player: 1, Win: 1
+end within 132 steps
+player: 1, Win: 1
+end within 140 steps
+player: 1, Win: 1
+end within 118 steps
+player: 1, Win: 1
+end within 124 steps
+player: 1, Win: 1
+end within 119 steps
+player: 0, Win: 1
+end within 128 steps
+player: 1, Win: 1
+end within 116 steps
+player: 1, Win: 1
+end within 133 steps
+player: 0, Win: 1
+end within 125 steps
+player: 0, Win: 1
+end within 108 steps
+player: 1, Win: 1
+end within 132 steps
+player: 1, Win: 1
+end within 113 steps
+player: 0, Win: 1
+end within 132 steps
+player: 1, Win: 1
+end within 139 steps
+player: 0, Win: 1
+end within 125 steps
+player: 0, Win: 1
+end within 122 steps
+player: 1, Win: 1
+end within 115 steps
+player: 0, Win: 1
+end within 105 steps
+player: 0, Win: 1
+end within 130 steps
+player: 1, Win: 1
+end within 105 steps
+player: 0, Win: 1
+end within 144 steps
+player: 1, Win: 1
+end within 110 steps
+player: 1, Win: 1
+end within 159 steps
+player: 0, Win: 1
+end within 123 steps
+player: 0, Win: 1
+end within 126 steps
+player: 1, Win: 1
+end within 149 steps
+player: 0, Win: 1
+end within 114 steps
+player: 1, Win: 1
+end within 133 steps
+player: 0, Win: 1
+end within 119 steps
+player: 0, Win: 1
+end within 120 steps
+player: 1, Win: 1
+end within 149 steps
+player: 0, Win: 1
+end within 113 steps
+player: 0, Win: 1
+end within 120 steps
+player: 1, Win: 1
+end within 130 steps
+player: 1, Win: 1
+end within 129 steps
+player: 0, Win: 1
+end within 125 steps
+player: 0, Win: 1
+end within 135 steps
+player: 0, Win: 1
+end within 131 steps
+player: 0, Win: 1
+end within 120 steps
+player: 1, Win: 1
+end within 148 steps
+player: 1, Win: 1
+end within 105 steps
+player: 0, Win: 1
+end within 116 steps
+player: 1, Win: 1
+end within 134 steps
+player: 1, Win: 1
+end within 152 steps
+player: 1, Win: 1
+end within 127 steps
+player: 0, Win: 1
+end within 109 steps
+player: 0, Win: 1
+end within 133 steps
+player: 0, Win: 1
+end within 139 steps
+player: 0, Win: 1
+end within 136 steps
+player: 1, Win: 1
+end within 118 steps
+player: 1, Win: 1
+end within 108 steps
+player: 1, Win: 1
+end within 122 steps
+player: 1, Win: 1
+end within 119 steps
+player: 0, Win: 1
+end within 146 steps
+player: 1, Win: 1
+end within 125 steps
+player: 0, Win: 1
+end within 104 steps
+player: 1, Win: 1
+end within 110 steps
+player: 1, Win: 1
+end within 135 steps
+player: 0, Win: 1
 
-    def get_pi(self):
-        t_v = sum([c.n**(1/self.config.t) for c in self.children])
-        pi = []
-
-        max = -999
-        max_child = 0
-        v_order_rec = [] # get the probability of each action
-
-        for i, child in enumerate(self.children):
-            v = (child.n)**(1/self.config.t) / (t_v + self.config.small)
-            v_order_rec.append(v)
-
-            # build up the strategy Pi(a,s)
-            pi.append(list(child.action))
-            if max < v:
-                max = v
-                max_child = child
-
-        # normalize the probability
-        v_order_rec = np.array(v_order_rec)
-        v_order_rec = v_order_rec / np.sum(v_order_rec)
-        for i in range(len(pi)):
-            pi[i].append(v_order_rec[i])
-            pi[i] = tuple(pi[i])
-
-        return pi
-
-    def show_pi(self):
-        t_v = sum([c.n**(1/self.config.t) for c in self.children])
-        print("sum child n: ", t_v)
-        print("self n: ", self.n)
-        pi = []
-
-        max = -999
-        max_child = 0
-        v_order_rec = [] # get the probability of each action
-
-        for i, child in enumerate(self.children):
-            print("child action: ", child.action, "child n: ", child.n)
-            v = (child.n)**(1/self.config.t) / (t_v + self.config.small)
-            v_order_rec.append(v)
-
-            # build up the strategy Pi(a,s)
-            pi.append(list(child.action))
-            if max < v:
-                max = v
-                max_child = child
-
-        # normalize the probability
-        v_order_rec = np.array(v_order_rec)
-        v_order_rec = v_order_rec / np.sum(v_order_rec)
-        for i in range(len(pi)):
-            pi[i].append(v_order_rec[i])
-            pi[i] = tuple(pi[i])
-
-        return pi
-    
-
-def convert_emoji_board_to_gameboard(emoji_board):
-    """
-    将表情符号棋盘转换为三个numpy矩阵层（红色、蓝色和绿色）
-    
-    参数:
-        emoji_board: 包含表情符号的字符串，表示棋盘状态
-        
-    返回:
-        green_layer, red_layer, blue_layer: 三个numpy矩阵
-    """
-    # 分割成行
-    rows = emoji_board.strip().split('\n')
-    
-    # 初始化三个8x8的矩阵
-    green_layer = np.zeros((8, 8), dtype=int)
-    red_layer = np.zeros((8, 8), dtype=int)
-    blue_layer = np.zeros((8, 8), dtype=int)
-    
-    # 遍历每个表情符号并填充相应的矩阵
-    for i, row in enumerate(rows):
-        for j, emoji in enumerate(row):
-            if emoji == '🟢':  # 绿色
-                green_layer[i, j] = 1
-            elif emoji == '🔴':  # 红色
-                red_layer[i, j] = 1
-            elif emoji == '🔵':  # 蓝色
-                blue_layer[i, j] = 1
-            # 白色（空）不需要设置，因为矩阵已初始化为0
-    
-    return np.array([red_layer, blue_layer, green_layer])
-
-# 示例棋盘
-emoji_board = """
-🟢🟢🟢🟢🟢🟢🟢🟢
-🟢🟢🟢🟢🟢🔵🟢⚪
-🟢🟢🔵🟢🟢🟢🟢🟢
-🟢🟢🔵🟢🟢🟢🔵🟢
-🟢🟢🟢🟢🟢🟢🟢🟢
-🟢🔵⚪🟢🔵🟢⚪🟢
-🟢🔴🟢🟢🟢🟢⚪🟢
-🔴🔴🟢🔴⚪🔴🔴🟢
+end within 119 steps
 """
 
-# 转换棋盘
-game = Game()
-game.gamebaord = convert_emoji_board_to_gameboard(emoji_board)
-game.pprint()
+bad = """
+end within 169 steps
+player: 0, Win: 1
+end within 184 steps
+player: 1, Win: 1
+end within 195 steps
+player: 0, Win: 1
+end within 123 steps
+player: 0, Win: 1
+end within 161 steps
+player: 0, Win: 1
+end within 196 steps
+player: 1, Win: 1
+end within 141 steps
+player: 0, Win: 1
+end within 143 steps
+player: 0, Win: 1
+end within 119 steps
+player: 0, Win: 1
+end within 145 steps
+player: 0, Win: 1
+end within 105 steps
+player: 0, Win: 1
+end within 167 steps
+player: 0, Win: 1
+end within 93 steps
+player: 0, Win: 1
+end within 129 steps
+player: 0, Win: 1
+end within 201 steps
+player: 0, Win: 1
+end within 181 steps
+player: 0, Win: 1
+end within 182 steps
+player: 1, Win: 1
+end within 188 steps
+player: 1, Win: 1
+end within 189 steps
+player: 0, Win: 1
+end within 105 steps
+player: 0, Win: 1
+end within 149 steps
+player: 0, Win: 1
+end within 160 steps
+player: 1, Win: 1
+end within 175 steps
+player: 0, Win: 1
+end within 148 steps
+player: 1, Win: 1
+end within 127 steps
+player: 0, Win: 1
+end within 129 steps
+player: 0, Win: 1
+"""
+# Initialize counters
+player0_wins = 0
+player1_wins = 0
 
-r = RSTK(game.get_gameboard())
-print(r.get_action_space(0))
+# Split the data into lines and process each line
+lines = data.strip().split('\n')
+for line in lines:
+    if line.startswith('player:'):
+        parts = line.split(',')
+        player_part = parts[0].strip()
+        win_part = parts[1].strip()
+        
+        # Extract player number
+        player = int(player_part.split(':')[1].strip())
+        
+        # Check if it's a win
+        if win_part == 'Win: 1':
+            if player == 0:
+                player0_wins += 1
+            elif player == 1:
+                player1_wins += 1
 
-class MctsConfig:
-    def __init__(self) -> None:
-        self.c = 2
-        self.t = 1
-        self.finish = False
-        self.visulze = False
-        self.small = 0.0000001
-
-        self.dirichlet_alpha = 0.03
-        self.dirichlet_epsilon = 0.25
-
-data_record = DataRecord(file="test.h5")
-model = Conv3DStack()
-mtcs = MCTSTest(1, (0,0,0,0,False), MctsConfig(), DeepFrecker(), data_record, game=game, player=0)
-
-for i in range(300):
-    mtcs.config.counter = i
-    if i > 300:
-        mtcs.config.visulze = True
-    game = copy.deepcopy(mtcs.game)
-    mtcs.simu(game)
-
-print(mtcs.show_pi())
-mtcs.move()
+print(f"Player 0 wins: {player0_wins}")
+print(f"Player 1 wins: {player1_wins}")

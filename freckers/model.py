@@ -68,9 +68,6 @@ class FreckersNet(nn.Module):
         x = self.residual_block1(x)
         x = self.residual_block2(x)
         x = self.residual_block3(x)
-        # x = self.residual_block3(x)
-        # x = self.residual_block4(x)
-
 
         # 图像输出分支  
         img_out = self.img_head(x)

@@ -11,6 +11,7 @@ from torch.utils.data import DataLoader, random_split
 import random
 import threading
 from multiprocessing import Process
+import time
 
 
 class MctsConfig:
@@ -100,16 +101,17 @@ class IterManagerMultiProcess(IterManager):
 
         
     def compare_model(self):
-        # model1 = torch.load(r"C:\Users\lucyc\Desktop\np2.pth", weights_only=False)
-        # model2 = torch.load(r"C:\Users\lucyc\Desktop\np1.pth", weights_only=False)
+        model1 = torch.load(r"C:\Users\lucyc\Desktop\t2.pth", weights_only=False)
+        model2 = torch.load(r"C:\Users\lucyc\Desktop\t2.pth", weights_only=False)
 
         # check1 = torch.load(r"C:\Users\lucyc\Desktop\models\3.pth", weights_only=False)
         # model1 = FreckersNet()
         # model1.load_state_dict(check1['model_state_dict'])
-        model1 = FreckersNet()
-        check2 = torch.load(r"C:\Users\lucyc\Desktop\models\24.pth", weights_only=False)
-        model2 = FreckersNet()
-        model2.load_state_dict(check2['model_state_dict'])
+
+        # model1 = FreckersNet()
+        # check2 = torch.load(r"C:\Users\lucyc\Desktop\models\24.pth", weights_only=False)
+        # model2 = FreckersNet()
+        # model2.load_state_dict(check2['model_state_dict'])
         
         deepfrecker1 = DeepFrecker(model=model1)
         deepfrecker2 = DeepFrecker(model=model2)
@@ -140,6 +142,23 @@ def run_simulation(thread_number: int, cfg: FreckersConfig):
     im = IterManagerMultiProcess(cfg, thread_number)
     im.mp_simu()
 
+def run_compare(thread_number: int, cfg: FreckersConfig):
+    im = IterManagerMultiProcess(cfg, thread_number)
+    im.compare_model()
+
+def main_compare():
+    cfg = FreckersConfig()
+    im = IterManagerMultiProcess(cfg, 0)
+    simulation_processes = []
+    for i in range(cfg.simulation_thread):
+        simulation_process = multiprocessing.Process(target=run_compare, args=(i, cfg))
+        simulation_process.start()
+        simulation_processes.append(simulation_process)
+        time.sleep(1)
+    for process in simulation_processes:
+        process.join()
+
+
 def main():
     import time
     cfg = FreckersConfig()
@@ -167,9 +186,7 @@ def main():
 
 if __name__ == "__main__":
     # main()
-    im = IterManagerMultiProcess(FreckersConfig(), 0)
-    im.compare_model()
-
+    main_compare()
 
 
 # note 可以尝试 移除生长 在空间中 防止神经网络 不喜欢 生长策略
