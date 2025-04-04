@@ -27,7 +27,7 @@ class MctsConfig:
         self.pb_c_base = 1000
         self.pb_c_init = 3
 
-        self.search_step = 200
+        self.search_step = 300
 
 
 class TrainingConfig:
@@ -35,7 +35,7 @@ class TrainingConfig:
         self.batch_size = 128
         self.shuffle = True
         self.num_workers = 1
-        self.epochs = 1
+        self.epochs = 3
         self.max_l_rate = 0.0001
         self.min_l_rate = 0.00001
 
@@ -47,12 +47,12 @@ class FreckersConfig:
         # iter setting
         self.iter_rounds = 2000
         # after 36, no gravity anymore
-        self.iter_now = 0
-        self.skip_first_simu = True
+        self.iter_now = 14
+        self.skip_first_simu = False
 
         # simulation settingss
-        self.simulation_round = 35
-        self.simulation_thread = 3
+        self.simulation_round = 26
+        self.simulation_thread = 4
 
         # mcts setting
         self.mcts_config = MctsConfig()
@@ -67,7 +67,7 @@ class FreckersConfig:
 
         # training setting
         self.training_dataset_cross = 20 # +2
-        self.training_dataset_select_rate = 0.007
+        self.training_dataset_select_rate = 0.005
         self.training_dataset_eval_rate = 0.98
         self.train_config = TrainingConfig()
 
@@ -101,17 +101,17 @@ class IterManagerMultiProcess(IterManager):
 
         
     def compare_model(self):
-        model1 = torch.load(r"C:\Users\lucyc\Desktop\t2.pth", weights_only=False)
-        model2 = torch.load(r"C:\Users\lucyc\Desktop\t2.pth", weights_only=False)
+        #model2 = torch.load(r"C:\Users\lucyc\Desktop\models\6.pth", weights_only=False)
+        # model2 = torch.load(r"C:\Users\lucyc\Desktop\s2.pth", weights_only=False)
 
-        # check1 = torch.load(r"C:\Users\lucyc\Desktop\models\3.pth", weights_only=False)
+        check1 = torch.load(r"C:\Users\lucyc\Desktop\models\5.pth", weights_only=False)
+        model1 = FreckersNet()
+        model1.load_state_dict(check1['model_state_dict'])
         # model1 = FreckersNet()
-        # model1.load_state_dict(check1['model_state_dict'])
-
         # model1 = FreckersNet()
-        # check2 = torch.load(r"C:\Users\lucyc\Desktop\models\24.pth", weights_only=False)
-        # model2 = FreckersNet()
-        # model2.load_state_dict(check2['model_state_dict'])
+        model2 = FreckersNet()
+        check2 = torch.load(r"C:\Users\lucyc\Desktop\models\14.pth", weights_only=False)
+        model2.load_state_dict(check2['model_state_dict'])
         
         deepfrecker1 = DeepFrecker(model=model1)
         deepfrecker2 = DeepFrecker(model=model2)
@@ -185,8 +185,8 @@ def main():
         cfg.iter_now += 1
 
 if __name__ == "__main__":
-    # main()
-    main_compare()
+    main()
+    #main_compare()
 
 
 # note 可以尝试 移除生长 在空间中 防止神经网络 不喜欢 生长策略
