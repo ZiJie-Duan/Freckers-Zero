@@ -21,7 +21,7 @@ class MctsConfig:
         self.visulze = False
         self.small = 0.0000001
 
-        self.dirichlet_alpha = 0.1
+        self.dirichlet_alpha = 0.2
         self.dirichlet_epsilon = 0.25
 
         self.pb_c_base = 1000
@@ -35,7 +35,7 @@ class TrainingConfig:
         self.batch_size = 128
         self.shuffle = True
         self.num_workers = 1
-        self.epochs = 3
+        self.epochs = 2
         self.max_l_rate = 0.0001
         self.min_l_rate = 0.00001
 
@@ -47,11 +47,11 @@ class FreckersConfig:
         # iter setting
         self.iter_rounds = 2000
         # after 36, no gravity anymore
-        self.iter_now = 14
+        self.iter_now = 32
         self.skip_first_simu = False
 
         # simulation settingss
-        self.simulation_round = 26
+        self.simulation_round = 30
         self.simulation_thread = 4
 
         # mcts setting
@@ -67,7 +67,7 @@ class FreckersConfig:
 
         # training setting
         self.training_dataset_cross = 20 # +2
-        self.training_dataset_select_rate = 0.005
+        self.training_dataset_select_rate = 0.003
         self.training_dataset_eval_rate = 0.98
         self.train_config = TrainingConfig()
 
@@ -110,7 +110,7 @@ class IterManagerMultiProcess(IterManager):
         # model1 = FreckersNet()
         # model1 = FreckersNet()
         model2 = FreckersNet()
-        check2 = torch.load(r"C:\Users\lucyc\Desktop\models\14.pth", weights_only=False)
+        check2 = torch.load(r"C:\Users\lucyc\Desktop\models\32.pth", weights_only=False)
         model2.load_state_dict(check2['model_state_dict'])
         
         deepfrecker1 = DeepFrecker(model=model1)
@@ -186,7 +186,7 @@ def main():
 
 if __name__ == "__main__":
     main()
-    #main_compare()
+    # main_compare()
 
 
 # note 可以尝试 移除生长 在空间中 防止神经网络 不喜欢 生长策略
