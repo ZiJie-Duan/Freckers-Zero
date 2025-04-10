@@ -11,9 +11,9 @@ class Simulator:
         self.game.init()
         i = 0
         while True:
-            if i > 30:
+            if i > 20:
                 self.mcts_agent.config.t = 0.2
-            elif i > 60:
+            elif i > 30:
                 self.mcts_agent.config.t = 0.01
             else:
                 self.mcts_agent.config.t = 1

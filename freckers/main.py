@@ -35,8 +35,8 @@ class TrainingConfig:
         self.batch_size = 128
         self.shuffle = True
         self.num_workers = 1
-        self.epochs = 2
-        self.max_l_rate = 0.0001
+        self.epochs = 1
+        self.max_l_rate = 0.00001
         self.min_l_rate = 0.00001
 
  
@@ -47,11 +47,11 @@ class FreckersConfig:
         # iter setting
         self.iter_rounds = 2000
         # after 36, no gravity anymore
-        self.iter_now = 68
+        self.iter_now = 126
         self.skip_first_simu = False
 
         # simulation settingss
-        self.simulation_round = 40
+        self.simulation_round = 50
         self.simulation_thread = 4
 
         # mcts setting
@@ -66,7 +66,7 @@ class FreckersConfig:
         self.game_rounds_limit = 250
 
         # training setting
-        self.training_dataset_cross = 20 # +2
+        self.training_dataset_cross = 30 # +2
         self.training_dataset_select_rate = 0.004
         self.training_dataset_eval_rate = 0.98
         self.train_config = TrainingConfig()
@@ -104,13 +104,13 @@ class IterManagerMultiProcess(IterManager):
         #model2 = torch.load(r"C:\Users\lucyc\Desktop\models\6.pth", weights_only=False)
         # model2 = torch.load(r"C:\Users\lucyc\Desktop\s2.pth", weights_only=False)
 
-        #check1 = torch.load(r"C:\Users\lucyc\Desktop\models\30.pth", weights_only=False)
+        check1 = torch.load(r"C:\Users\lucyc\Desktop\models\126.pth", weights_only=False)
         model1 = FreckersNet()
-        #model1.load_state_dict(check1['model_state_dict'])
+        model1.load_state_dict(check1['model_state_dict'])
         # model1 = FreckersNet()
         # model1 = FreckersNet()
         model2 = FreckersNet()
-        check2 = torch.load(r"C:\Users\lucyc\Desktop\models\68.pth", weights_only=False)
+        check2 = torch.load(r"C:\Users\lucyc\Desktop\models\126.pth", weights_only=False)
         model2.load_state_dict(check2['model_state_dict'])
         
         deepfrecker1 = DeepFrecker(model=model1)
@@ -148,8 +148,8 @@ def run_compare(thread_number: int, cfg: FreckersConfig):
 
 def main_compare():
     cfg = FreckersConfig()
-    cfg.simulation_thread = 4
-    cfg.visulze = False
+    cfg.simulation_thread = 1
+    cfg.visulze = True
     im = IterManagerMultiProcess(cfg, 0)
     simulation_processes = []
     for i in range(cfg.simulation_thread):
@@ -192,3 +192,4 @@ if __name__ == "__main__":
 
 
 # note 可以尝试 移除生长 在空间中 防止神经网络 不喜欢 生长策略
+# note ,训练达到了140 左右 神经网络表现出糟糕的行为 出现了卡死 的现象 
