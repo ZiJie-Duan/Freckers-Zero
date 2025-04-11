@@ -28,14 +28,14 @@ class IterManager:
             print("[IterManager]: Load Model from CheckPoint")
             checkpoint = torch.load(
                 self.cfg.model_base_dir 
-                + "\\" + str(self.cfg.iter_now) + ".pth", weights_only=False)
+                + "/" + str(self.cfg.iter_now) + ".pth", weights_only=False)
             model = FreckersNet()
             model.load_state_dict(checkpoint['model_state_dict'])
         
         deepfrecker = DeepFrecker(model=model)
         datarecorder = DataRecord(
             file=self.cfg.dataset_base_dir 
-            + "\\" + str(self.cfg.iter_now + 1) + ".h5")
+            + "/" + str(self.cfg.iter_now + 1) + ".h5")
         
         mcts_agent = MCTSAgent(
             deepfrecker0=deepfrecker,
@@ -55,14 +55,14 @@ class IterManager:
         now = self.cfg.iter_now
         datafiles = []
         if now == 0:
-            datafiles.append(self.cfg.dataset_base_dir + "\\1" + ".h5")
+            datafiles.append(self.cfg.dataset_base_dir + "/1" + ".h5")
         else:
             for i in range(
                 max(1, now - self.cfg.training_dataset_cross),
                 now + 2):
 
                 datafiles.append(
-                    self.cfg.dataset_base_dir + "\\" + str(i) + ".h5"
+                    self.cfg.dataset_base_dir + "/" + str(i) + ".h5"
                 )
         
         datasets = [FreckerDataSet(x) for x in datafiles]
@@ -99,7 +99,7 @@ class IterManager:
         else:
             self.trainer = Trainer(
                 checkpointFile=self.cfg.model_base_dir\
-                        + "\\" + str(self.cfg.iter_now) + ".pth",
+                        + "/" + str(self.cfg.iter_now) + ".pth",
                 config=self.cfg.train_config
             )       
 
@@ -129,7 +129,7 @@ class IterManager:
 
             train_dataset, val_dataset = self.load_dataset()
             self.trainer.train(self.cfg.train_config, 
-                self.cfg.model_base_dir + "\\" + str(self.cfg.iter_now + 1) + ".pth",
+                self.cfg.model_base_dir + "/" + str(self.cfg.iter_now + 1) + ".pth",
                 train_dataset, val_dataset)
             
             print("[IterManager]: Training Finish")

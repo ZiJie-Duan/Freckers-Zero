@@ -1,3 +1,5 @@
+
+import multiprocessing
 from iter_manager import IterManager
 from deep_frecker import DeepFrecker
 from data_record import DataRecord
@@ -10,7 +12,6 @@ import torch
 from torch.utils.data import DataLoader, random_split
 import random
 import threading
-from multiprocessing import Process
 import time
 
 
@@ -43,11 +44,11 @@ class TrainingConfig:
 class FreckersConfig:
     
     def __init__(self) -> None:
-        self.visulze = False
+        self.visulze = True
         # iter setting
         self.iter_rounds = 2000
         # after 36, no gravity anymore
-        self.iter_now = 126
+        self.iter_now = 134
         self.skip_first_simu = False
 
         # simulation settingss
@@ -59,8 +60,8 @@ class FreckersConfig:
         self.init_player = 0
 
         # model / dataset setting
-        self.model_base_dir = r"C:\Users\lucyc\Desktop\models"
-        self.dataset_base_dir = r"C:\Users\lucyc\Desktop\data"
+        self.model_base_dir = r"/mnt/cdata/models"
+        self.dataset_base_dir = r"/mnt/cdata/data"
 
         # game setting
         self.game_rounds_limit = 250
@@ -85,7 +86,7 @@ class IterManagerMultiProcess(IterManager):
         train_dataset, val_dataset = self.load_dataset()
         print(f"[IterManagerMultiProcess:{self.thread_number}]: Training Dataset Load Finish")
         self.trainer.train(self.cfg.train_config, 
-            self.cfg.model_base_dir + "\\" + str(self.cfg.iter_now + 1) + ".pth",
+            self.cfg.model_base_dir + "/" + str(self.cfg.iter_now + 1) + ".pth",
             train_dataset, val_dataset)
         print(f"[IterManagerMultiProcess:{self.thread_number}]: Training Finish")
         self.trainer = None
@@ -104,13 +105,13 @@ class IterManagerMultiProcess(IterManager):
         #model2 = torch.load(r"C:\Users\lucyc\Desktop\models\6.pth", weights_only=False)
         # model2 = torch.load(r"C:\Users\lucyc\Desktop\s2.pth", weights_only=False)
 
-        check1 = torch.load(r"C:\Users\lucyc\Desktop\models\126.pth", weights_only=False)
+        check1 = torch.load(r"/mnt/cdata/models/134.pth", weights_only=False)
         model1 = FreckersNet()
         model1.load_state_dict(check1['model_state_dict'])
         # model1 = FreckersNet()
         # model1 = FreckersNet()
         model2 = FreckersNet()
-        check2 = torch.load(r"C:\Users\lucyc\Desktop\models\126.pth", weights_only=False)
+        check2 = torch.load(r"/mnt/cdata/models/10.pth", weights_only=False)
         model2.load_state_dict(check2['model_state_dict'])
         
         deepfrecker1 = DeepFrecker(model=model1)
@@ -135,8 +136,6 @@ class IterManagerMultiProcess(IterManager):
 
         self.simulator.run(self.cfg.simulation_round)
 
-
-import multiprocessing
 
 def run_simulation(thread_number: int, cfg: FreckersConfig):
     im = IterManagerMultiProcess(cfg, thread_number)
@@ -187,8 +186,8 @@ def main():
         cfg.iter_now += 1
 
 if __name__ == "__main__":
-    main()
-    # main_compare()
+    # main()
+    main_compare()
 
 
 # note 可以尝试 移除生长 在空间中 防止神经网络 不喜欢 生长策略
