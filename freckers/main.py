@@ -1,4 +1,3 @@
-
 import multiprocessing
 from iter_manager import IterManager
 from deep_frecker import DeepFrecker
@@ -13,6 +12,8 @@ from torch.utils.data import DataLoader, random_split
 import random
 import threading
 import time
+import os
+import numpy as np
 
 
 class MctsConfig:
@@ -22,7 +23,7 @@ class MctsConfig:
         self.visulze = False
         self.small = 0.0000001
 
-        self.dirichlet_alpha = 0.2
+        self.dirichlet_alpha = 0.02
         self.dirichlet_epsilon = 0.25
 
         self.pb_c_base = 1000
@@ -44,11 +45,11 @@ class TrainingConfig:
 class FreckersConfig:
     
     def __init__(self) -> None:
-        self.visulze = True
+        self.visulze = False
         # iter setting
         self.iter_rounds = 2000
         # after 36, no gravity anymore
-        self.iter_now = 134
+        self.iter_now = 142
         self.skip_first_simu = False
 
         # simulation settingss
@@ -64,7 +65,7 @@ class FreckersConfig:
         self.dataset_base_dir = r"/mnt/cdata/data"
 
         # game setting
-        self.game_rounds_limit = 250
+        self.game_rounds_limit = 150
 
         # training setting
         self.training_dataset_cross = 30 # +2
@@ -105,13 +106,13 @@ class IterManagerMultiProcess(IterManager):
         #model2 = torch.load(r"C:\Users\lucyc\Desktop\models\6.pth", weights_only=False)
         # model2 = torch.load(r"C:\Users\lucyc\Desktop\s2.pth", weights_only=False)
 
-        check1 = torch.load(r"/mnt/cdata/models/134.pth", weights_only=False)
+        check1 = torch.load(r"/mnt/cdata/models/142.pth", weights_only=False)
         model1 = FreckersNet()
         model1.load_state_dict(check1['model_state_dict'])
         # model1 = FreckersNet()
         # model1 = FreckersNet()
         model2 = FreckersNet()
-        check2 = torch.load(r"/mnt/cdata/models/10.pth", weights_only=False)
+        check2 = torch.load(r"/mnt/cdata/models/142.pth", weights_only=False)
         model2.load_state_dict(check2['model_state_dict'])
         
         deepfrecker1 = DeepFrecker(model=model1)
@@ -138,10 +139,24 @@ class IterManagerMultiProcess(IterManager):
 
 
 def run_simulation(thread_number: int, cfg: FreckersConfig):
+    import os
+    import time
+    # 使用进程ID和当前时间的哈希值作为随机数种子，确保在有效范围内
+    seed = hash(str(os.getpid()) + str(time.time())) % (2**32)
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
     im = IterManagerMultiProcess(cfg, thread_number)
     im.mp_simu()
 
 def run_compare(thread_number: int, cfg: FreckersConfig):
+    import os
+    import time
+    # 使用进程ID和当前时间的哈希值作为随机数种子，确保在有效范围内
+    seed = hash(str(os.getpid()) + str(time.time())) % (2**32)
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
     im = IterManagerMultiProcess(cfg, thread_number)
     im.compare_model()
 
@@ -186,8 +201,8 @@ def main():
         cfg.iter_now += 1
 
 if __name__ == "__main__":
-    # main()
-    main_compare()
+    main()
+    # main_compare()
 
 
 # note 可以尝试 移除生长 在空间中 防止神经网络 不喜欢 生长策略
