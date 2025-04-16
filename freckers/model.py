@@ -4,6 +4,8 @@ import h5py
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
+import random
+import time
 
 class ResidualBlock(nn.Module):
     def __init__(self, in_channels, out_channels, stride=1):
@@ -156,23 +158,34 @@ class MaskLoss(nn.Module):
 
 
 class FreckerDataSet(Dataset):
-    def __init__(self, file_path):
+    def __init__(self, file_path, max_retries=5, base_delay=0.1):
         """
         初始化H5Dataset对象。
 
         参数:
         - file_path: HDF5文件的路径
-        - dataset_name: HDF5文件中数据集的名称
+        - max_retries: 最大重试次数
+        - base_delay: 基础延迟时间（秒）
         """
         self.file_path = file_path
         self.gameboard = None
         self.action_prob = None
         self.value = None
 
-        with h5py.File(self.file_path, 'r') as file:
-            self.gameboard = file['gameboard'][:]  # 将数据加载到内存中
-            self.action_prob = file['action_prob'][:]  # 将数据加载到内存中
-            self.value = file['value'][:]  # 将数据加载到内存中
+        for attempt in range(max_retries):
+            try:
+                with h5py.File(self.file_path, 'r') as file:
+                    self.gameboard = file['gameboard'][:]  # 将数据加载到内存中
+                    self.action_prob = file['action_prob'][:]  # 将数据加载到内存中
+                    self.value = file['value'][:]  # 将数据加载到内存中
+                return  # 如果成功，直接返回
+            except BlockingIOError:
+                if attempt == max_retries - 1:  # 最后一次尝试
+                    raise  # 重新抛出异常
+                # 计算退避时间，使用指数退避策略
+                delay = base_delay * (2 ** attempt) + random.uniform(0, 0.1)
+                time.sleep(delay)
+                print(f"文件锁定重试中... 第{attempt + 1}次尝试，等待{delay:.2f}秒")
 
     def __len__(self):
         """

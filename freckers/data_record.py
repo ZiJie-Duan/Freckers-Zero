@@ -1,6 +1,7 @@
-
 import numpy as np
 import h5py
+import time
+import random
 
 class DataRecord:
     def __init__(self, file):
@@ -62,49 +63,56 @@ class DataRecord:
         self.memo_value = np.empty((0,), dtype=np.int32)
 
 
-    def save(self, file=None):
+    def save(self, file=None, max_retries=5, base_delay=0.1):
         if file == None:
             file = self.file
 
-        with h5py.File(file, 'a') as f:  # 始终使用追加模式
-            # 初始化数据集（如果不存在）
-            if 'gameboard' not in f:
-                f.create_dataset(
-                    'gameboard',
-                    data=self.memo_gameboard,
-                    maxshape=(None, 16, 8, 8),
-                    chunks=True
-                )
-                f.create_dataset(
-                    'action_prob',
-                    data=self.memo_action_prob,
-                    maxshape=(None, 65, 8, 8),
-                    chunks=True
-                )
-                f.create_dataset(
-                    'value',
-                    data=self.memo_value,
-                    maxshape=(None,),
-                    chunks=True
-                )
-            else:
-                # 扩展数据集
-                for name, data in [('gameboard', self.memo_gameboard),
-                                 ('action_prob', self.memo_action_prob),
-                                 ('value', self.memo_value)]:
-                    dataset = f[name]
-                    old_size = dataset.shape[0]
-                    new_size = old_size + data.shape[0]
+        for attempt in range(max_retries):
+            try:
+                with h5py.File(file, 'a') as f:  # 始终使用追加模式
+                    # 初始化数据集（如果不存在）
+                    if 'gameboard' not in f:
+                        f.create_dataset(
+                            'gameboard',
+                            data=self.memo_gameboard,
+                            maxshape=(None, 16, 8, 8),
+                            chunks=True
+                        )
+                        f.create_dataset(
+                            'action_prob',
+                            data=self.memo_action_prob,
+                            maxshape=(None, 65, 8, 8),
+                            chunks=True
+                        )
+                        f.create_dataset(
+                            'value',
+                            data=self.memo_value,
+                            maxshape=(None,),
+                            chunks=True
+                        )
+                    else:
+                        # 扩展数据集
+                        for name, data in [('gameboard', self.memo_gameboard),
+                                         ('action_prob', self.memo_action_prob),
+                                         ('value', self.memo_value)]:
+                            dataset = f[name]
+                            old_size = dataset.shape[0]
+                            new_size = old_size + data.shape[0]
+                            
+                            # 调整数据集大小
+                            dataset.resize(new_size, axis=0)
+                            # 写入新数据
+                            dataset[old_size:new_size] = data
                     
-                    # 调整数据集大小
-                    dataset.resize(new_size, axis=0)
+                    self.drop()
                     
-                    # 写入新数据
-                    dataset[old_size:] = data
-        
-        # 清空缓存
-        self.memo_gameboard = np.empty((0, 16, 8, 8), dtype=np.int32)
-        self.memo_action_prob = np.empty((0, 65, 8, 8), dtype=np.int32)
-        self.memo_value = np.empty((0,), dtype=np.int32)
+                return  # 如果成功，直接返回
+            except BlockingIOError:
+                if attempt == max_retries - 1:  # 最后一次尝试
+                    raise  # 重新抛出异常
+                # 计算退避时间，使用指数退避策略
+                delay = base_delay * (2 ** attempt) + random.uniform(0, 0.1)
+                time.sleep(delay)
+                print(f"文件锁定重试中... 第{attempt + 1}次尝试，等待{delay:.2f}秒")
 
 

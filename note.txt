@@ -1,0 +1,2 @@
+
+after 196, we change the rate of the noise from 30% -> 25%
